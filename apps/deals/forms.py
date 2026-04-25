@@ -47,3 +47,68 @@ class DealCreateForm(forms.Form):
             }
         ),
     )
+
+
+class DealFilterForm(forms.Form):
+    keyword = forms.CharField(
+        label="キーワード",
+        required=False,
+        widget=forms.TextInput(
+            attrs={
+                "placeholder": "案件名・対象会社名・説明で検索",
+            }
+        ),
+    )
+
+    deal_status = forms.ChoiceField(
+        label="案件ステータス",
+        required=False,
+        choices=[
+            ("", "すべて"),
+            ("DRAFT", "DRAFT：下書き"),
+            ("ACTIVE", "ACTIVE：進行中"),
+            ("ON_HOLD", "ON_HOLD：保留"),
+            ("COMPLETED", "COMPLETED：完了"),
+            ("CANCELLED", "CANCELLED：中止"),
+            ("ARCHIVED", "ARCHIVED：アーカイブ"),
+        ],
+    )
+
+    deal_type = forms.CharField(
+        label="案件種別",
+        required=False,
+        widget=forms.TextInput(attrs={"placeholder": "例：買収後統合"}),
+    )
+
+    region_main = forms.CharField(
+        label="地域",
+        required=False,
+        widget=forms.TextInput(attrs={"placeholder": "例：大阪"}),
+    )
+
+    owner_user_id = forms.CharField(
+        label="担当者ID",
+        required=False,
+        widget=forms.TextInput(attrs={"placeholder": "例：u001"}),
+    )
+
+    show_archived = forms.BooleanField(
+        label="アーカイブも表示",
+        required=False,
+        initial=False,
+    )
+
+
+class DealStatusUpdateForm(forms.Form):
+    deal_status = forms.ChoiceField(
+        label="案件ステータス",
+        required=True,
+        choices=[
+            ("DRAFT", "DRAFT：下書き"),
+            ("ACTIVE", "ACTIVE：進行中"),
+            ("ON_HOLD", "ON_HOLD：保留"),
+            ("COMPLETED", "COMPLETED：完了"),
+            ("CANCELLED", "CANCELLED：中止"),
+            ("ARCHIVED", "ARCHIVED：アーカイブ"),
+        ],
+    )

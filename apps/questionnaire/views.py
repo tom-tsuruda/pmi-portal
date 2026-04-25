@@ -27,11 +27,18 @@ def questionnaire_start(request, deal_id: str):
                     cleaned_data=form.cleaned_data,
                 )
 
-                task_count = questionnaire_service.generate_tasks_from_templates(deal_id)
+                result = questionnaire_service.generate_tasks_from_templates(
+                    deal_id=deal_id,
+                    questions=questions,
+                    cleaned_data=form.cleaned_data,
+                )
 
                 messages.success(
                     request,
-                    f"質問票を保存しました。回答 {answer_count} 件、タスク {task_count} 件を生成しました。",
+                    f"質問票を保存しました。回答 {answer_count} 件、"
+                    f"新規タスク {result['created_count']} 件を生成、"
+                    f"既存タスク {result['skipped_count']} 件をスキップ、"
+                    f"条件不一致 {result['condition_skipped_count']} 件でした。",
                 )
                 return redirect("deals:detail", deal_id=deal_id)
 

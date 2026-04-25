@@ -14,6 +14,9 @@ class TaskService:
 
         return self.task_repo.find_all()
 
+    def filter_tasks(self, filters: dict) -> list[dict]:
+        return self.task_repo.filter_tasks(filters)
+
     def create_task(self, dto: TaskCreateDTO) -> str:
         last_id = self.task_repo.get_last_task_id()
         task_id = next_id("TASK", last_id)
@@ -29,7 +32,7 @@ class TaskService:
 
             "title": dto.title,
             "description": dto.description,
-            "task_type": "MANUAL",
+            "task_type": "MANUAL" if not dto.template_source_id else "TEMPLATE",
             "priority": dto.priority,
             "status": "TODO",
 
@@ -41,20 +44,20 @@ class TaskService:
             "completed_date": "",
 
             "approval_required_flag": 0,
-            "evidence_required_flag": 0,
-            "evidence_status": "NOT_REQUIRED",
+            "evidence_required_flag": dto.evidence_required_flag,
+            "evidence_status": "REQUIRED" if int(dto.evidence_required_flag or 0) == 1 else "NOT_REQUIRED",
 
-            "template_source_id": "",
+            "template_source_id": dto.template_source_id,
             "related_decision_id": "",
             "related_raid_id": "",
             "related_document_id": "",
 
-            "regulation_flag": 0,
+            "regulation_flag": dto.regulation_flag,
             "critical_path_flag": 0,
             "overdue_flag": 0,
 
-            "why_this_task": "PMIの進捗を管理するための基本タスクです。",
-            "beginner_guidance": "まずは担当者・期限・完了条件を確認してください。",
+            "why_this_task": dto.why_this_task or "PMIの進捗を管理するための基本タスクです。",
+            "beginner_guidance": dto.beginner_guidance or "まずは担当者・期限・完了条件を確認してください。",
             "completion_note": "",
 
             "created_by_user_id": dto.owner_user_id,
@@ -65,6 +68,19 @@ class TaskService:
 
         self.task_repo.append_row(record)
         return task_id
+
+    def create_task_if_not_exists_by_template(self, dto: TaskCreateDTO) -> tuple[bool, str | None]:
+        if dto.template_source_id:
+            exists = self.task_repo.exists_by_deal_and_template(
+                deal_id=dto.deal_id,
+                template_source_id=dto.template_source_id,
+            )
+
+            if exists:
+                return False, None
+
+        task_id = self.create_task(dto)
+        return True, task_id
 
     def update_status(self, task_id: str, status: str) -> None:
         self.task_repo.update_row(

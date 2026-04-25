@@ -41,6 +41,7 @@
             <div class="summary-value">{{ documents|length }}</div>
             <div class="summary-sub">登録済み資料</div>
         </div>
+        
     </div>
 </div>
 
@@ -143,6 +144,7 @@
                                     <option value="IN_PROGRESS" {% if task.status == "IN_PROGRESS" %}selected{% endif %}>IN_PROGRESS</option>
                                     <option value="DONE" {% if task.status == "DONE" %}selected{% endif %}>DONE</option>
                                     <option value="BLOCKED" {% if task.status == "BLOCKED" %}selected{% endif %}>BLOCKED</option>
+                                    <option value="CANCELLED" {% if task.status == "CANCELLED" %}selected{% endif %}>CANCELLED</option>
                                 </select>
                                 <button class="button" type="submit">更新</button>
                             </form>
@@ -181,6 +183,7 @@
                     <th>状態</th>
                     <th>期限</th>
                     <th>更新</th>
+                    <th>削除</th>
                 </tr>
             </thead>
             <tbody>
@@ -253,6 +256,27 @@
                         <td>{{ doc.file_name }}</td>
                         <td>{{ doc.storage_path }}</td>
                         <td>{{ doc.created_at }}</td>
+                        <td>
+                            {% if doc.document_id %}
+                                {% if doc.deleted_flag != 1 and doc.deleted_flag != "1" %}
+                                    <form method="post" action="{% url 'documents:delete' doc.document_id %}">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="deal_id" value="{{ deal.deal_id }}">
+                                        <button
+                                            class="button-danger"
+                                            type="submit"
+                                            onclick="return confirm('この資料を削除済みにします。よろしいですか？');"
+                                        >
+                                            削除
+                                        </button>
+                                    </form>
+                                {% else %}
+                                    削除済み
+                                {% endif %}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
                     </tr>
                 {% endfor %}
             </tbody>

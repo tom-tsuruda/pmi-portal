@@ -9,20 +9,78 @@
         <a class="button" href="{% url 'documents:upload' %}">資料アップロード</a>
     </div>
 
-    <form method="get" style="margin-bottom: 20px;">
-        <label for="deal_id">案件IDで絞り込み</label>
-        <div style="display: flex; gap: 8px;">
-            <input
-                type="text"
-                id="deal_id"
-                name="deal_id"
-                value="{{ deal_id }}"
-                placeholder="例：DEAL-000001"
-            >
+    <form method="get" class="filter-box">
+        <div class="filter-grid">
+            <div>
+                {{ filter_form.keyword.label_tag }}
+                {{ filter_form.keyword }}
+            </div>
+
+            <div>
+                {{ filter_form.deal_id.label_tag }}
+                {{ filter_form.deal_id }}
+            </div>
+
+            <div>
+                {{ filter_form.phase_id.label_tag }}
+                {{ filter_form.phase_id }}
+            </div>
+
+            <div>
+                {{ filter_form.workstream_id.label_tag }}
+                {{ filter_form.workstream_id }}
+            </div>
+
+            <div>
+                {{ filter_form.document_type.label_tag }}
+                {{ filter_form.document_type }}
+            </div>
+
+            <div>
+                {{ filter_form.status.label_tag }}
+                {{ filter_form.status }}
+            </div>
+
+            <div>
+                {{ filter_form.access_level.label_tag }}
+                {{ filter_form.access_level }}
+            </div>
+
+            <div>
+                {{ filter_form.owner_user_id.label_tag }}
+                {{ filter_form.owner_user_id }}
+            </div>
+
+            <div class="checkbox-row">
+                {{ filter_form.template_only }}
+                {{ filter_form.template_only.label_tag }}
+            </div>
+
+            <div class="checkbox-row">
+                {{ filter_form.evidence_only }}
+                {{ filter_form.evidence_only.label_tag }}
+            </div>
+
+            <div class="checkbox-row">
+                {{ filter_form.report_only }}
+                {{ filter_form.report_only.label_tag }}
+            </div>
+
+            <div class="checkbox-row">
+                {{ filter_form.show_deleted }}
+                {{ filter_form.show_deleted.label_tag }}
+            </div>
+        </div>
+
+        <div class="form-actions">
             <button class="button" type="submit">絞り込み</button>
             <a class="button-secondary" href="{% url 'documents:list' %}">解除</a>
         </div>
     </form>
+
+    <div style="margin: 16px 0; color: #6b7280;">
+        表示件数：{{ documents|length }} 件
+    </div>
 
     {% if documents %}
         <table>
@@ -38,7 +96,7 @@
                     <th>状態</th>
                     <th>担当者</th>
                     <th>保存先</th>
-                    <th>作成日時</th>
+                    <th>削除</th>
                 </tr>
             </thead>
             <tbody>
@@ -54,14 +112,30 @@
                         <td>{{ doc.status }}</td>
                         <td>{{ doc.owner_user_id }}</td>
                         <td>{{ doc.storage_path }}</td>
-                        <td>{{ doc.created_at }}</td>
+                        <td>
+                            {% if doc.deleted_flag != 1 and doc.deleted_flag != "1" %}
+                                <form method="post" action="{% url 'documents:delete' doc.document_id %}">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="deal_id" value="{{ doc.deal_id }}">
+                                    <button
+                                        class="button-danger"
+                                        type="submit"
+                                        onclick="return confirm('この資料を削除済みにします。よろしいですか？');"
+                                    >
+                                        削除
+                                    </button>
+                                </form>
+                            {% else %}
+                                削除済み
+                            {% endif %}
+                        </td>
                     </tr>
                 {% endfor %}
             </tbody>
         </table>
     {% else %}
         <div class="empty">
-            資料データがありません。まずは資料をアップロードしてください。
+            条件に一致する資料がありません。
         </div>
     {% endif %}
 </div>

@@ -3,7 +3,7 @@ from django.shortcuts import redirect, render
 
 from apps.core.exceptions import RepositoryError
 from apps.raid.dtos import RaidCreateDTO
-from apps.raid.forms import RaidCreateForm
+from apps.raid.forms import RaidCreateForm, RaidFilterForm
 from apps.raid.services import RaidService
 
 
@@ -11,10 +11,15 @@ raid_service = RaidService()
 
 
 def raid_list(request):
-    deal_id = request.GET.get("deal_id") or ""
+    filter_form = RaidFilterForm(request.GET or None)
+
+    filters = {}
+
+    if filter_form.is_valid():
+        filters = filter_form.cleaned_data
 
     try:
-        items = raid_service.list_items(deal_id=deal_id if deal_id else None)
+        items = raid_service.filter_items(filters)
     except RepositoryError as e:
         items = []
         messages.error(request, str(e))
@@ -24,7 +29,8 @@ def raid_list(request):
         "raid/raid_list.html",
         {
             "items": items,
-            "deal_id": deal_id,
+            "filter_form": filter_form,
+            "filters": filters,
         },
     )
 

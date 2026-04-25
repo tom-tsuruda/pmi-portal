@@ -142,3 +142,124 @@ class DocumentUploadForm(forms.Form):
         label="アップロードファイル",
         required=True,
     )
+
+
+class DocumentFilterForm(forms.Form):
+    keyword = forms.CharField(
+        label="キーワード",
+        required=False,
+        widget=forms.TextInput(
+            attrs={
+                "placeholder": "資料名・ファイル名・タグで検索",
+            }
+        ),
+    )
+
+    deal_id = forms.CharField(
+        label="案件ID",
+        required=False,
+        widget=forms.TextInput(
+            attrs={
+                "placeholder": "例：DEAL-000001",
+            }
+        ),
+    )
+
+    phase_id = forms.ChoiceField(
+        label="フェーズ",
+        required=False,
+        choices=[
+            ("", "すべて"),
+            ("PRE_CLOSE", "PRE_CLOSE"),
+            ("DAY1", "DAY1"),
+            ("DAY30", "DAY30"),
+            ("DAY100", "DAY100"),
+            ("TSA", "TSA"),
+            ("POST100", "POST100"),
+        ],
+    )
+
+    workstream_id = forms.ChoiceField(
+        label="ワークストリーム",
+        required=False,
+        choices=[
+            ("", "すべて"),
+            ("PMO", "PMO"),
+            ("HR", "HR"),
+            ("IT", "IT"),
+            ("FINANCE", "FINANCE"),
+            ("LEGAL", "LEGAL"),
+            ("SALES", "SALES"),
+            ("OPS", "OPS"),
+            ("COMMS", "COMMS"),
+        ],
+    )
+
+    document_type = forms.ChoiceField(
+        label="資料種別",
+        required=False,
+        choices=[
+            ("", "すべて"),
+            ("CHECKLIST", "CHECKLIST"),
+            ("NOTICE", "NOTICE"),
+            ("CONTRACT", "CONTRACT"),
+            ("MINUTES", "MINUTES"),
+            ("EVIDENCE", "EVIDENCE"),
+            ("REPORT", "REPORT"),
+            ("TEMPLATE", "TEMPLATE"),
+            ("OTHER", "OTHER"),
+        ],
+    )
+
+    status = forms.ChoiceField(
+        label="ステータス",
+        required=False,
+        choices=[
+            ("", "すべて"),
+            ("DRAFT", "DRAFT"),
+            ("ACTIVE", "ACTIVE"),
+            ("APPROVED", "APPROVED"),
+            ("DELETED", "DELETED"),
+        ],
+    )
+
+    access_level = forms.ChoiceField(
+        label="アクセスレベル",
+        required=False,
+        choices=[
+            ("", "すべて"),
+            ("INTERNAL", "INTERNAL"),
+            ("CONFIDENTIAL", "CONFIDENTIAL"),
+            ("PUBLIC", "PUBLIC"),
+        ],
+    )
+
+    owner_user_id = forms.CharField(
+        label="担当者ID",
+        required=False,
+        widget=forms.TextInput(attrs={"placeholder": "例：u001"}),
+    )
+
+    template_only = forms.BooleanField(
+        label="テンプレートのみ",
+        required=False,
+        initial=False,
+    )
+
+    evidence_only = forms.BooleanField(
+        label="証跡のみ",
+        required=False,
+        initial=False,
+    )
+
+    report_only = forms.BooleanField(
+        label="レポートのみ",
+        required=False,
+        initial=False,
+    )
+
+    show_deleted = forms.BooleanField(
+        label="削除済みも表示",
+        required=False,
+        initial=False,
+    )

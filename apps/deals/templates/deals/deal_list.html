@@ -9,6 +9,49 @@
         <a class="button" href="{% url 'deals:create' %}">新規案件登録</a>
     </div>
 
+    <form method="get" class="filter-box">
+        <div class="filter-grid">
+            <div>
+                {{ filter_form.keyword.label_tag }}
+                {{ filter_form.keyword }}
+            </div>
+
+            <div>
+                {{ filter_form.deal_status.label_tag }}
+                {{ filter_form.deal_status }}
+            </div>
+
+            <div>
+                {{ filter_form.deal_type.label_tag }}
+                {{ filter_form.deal_type }}
+            </div>
+
+            <div>
+                {{ filter_form.region_main.label_tag }}
+                {{ filter_form.region_main }}
+            </div>
+
+            <div>
+                {{ filter_form.owner_user_id.label_tag }}
+                {{ filter_form.owner_user_id }}
+            </div>
+
+            <div class="checkbox-row">
+                {{ filter_form.show_archived }}
+                {{ filter_form.show_archived.label_tag }}
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <button class="button" type="submit">絞り込み</button>
+            <a class="button-secondary" href="{% url 'deals:list' %}">解除</a>
+        </div>
+    </form>
+
+    <div style="margin: 16px 0; color: #6b7280;">
+        表示件数：{{ deals|length }} 件
+    </div>
+
     {% if deals %}
         <table>
             <thead>
@@ -18,6 +61,8 @@
                     <th>対象会社</th>
                     <th>案件種別</th>
                     <th>地域</th>
+                    <th>ステータス</th>
+                    <th>有効</th>
                     <th>担当者ID</th>
                     <th>作成日時</th>
                 </tr>
@@ -38,6 +83,8 @@
                         <td>{{ deal.target_company_name }}</td>
                         <td>{{ deal.deal_type }}</td>
                         <td>{{ deal.region_main }}</td>
+                        <td>{{ deal.deal_status }}</td>
+                        <td>{{ deal.is_active }}</td>
                         <td>{{ deal.owner_user_id }}</td>
                         <td>{{ deal.created_at }}</td>
                     </tr>
@@ -46,7 +93,7 @@
         </table>
     {% else %}
         <div class="empty">
-            案件データがありません。まずは新規案件を登録してください。
+            条件に一致する案件がありません。
         </div>
     {% endif %}
 </div>

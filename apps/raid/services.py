@@ -14,6 +14,9 @@ class RaidService:
 
         return self.raid_repo.find_all()
 
+    def filter_items(self, filters: dict) -> list[dict]:
+        return self.raid_repo.filter_items(filters)
+
     def create_item(self, dto: RaidCreateDTO) -> str:
         last_id = self.raid_repo.get_last_raid_id()
         raid_id = next_id("RAID", last_id)

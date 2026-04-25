@@ -9,7 +9,10 @@ class DealService:
         self.deal_repo = deal_repo or ExcelDealRepository()
 
     def list_deals(self) -> list[dict]:
-        return self.deal_repo.find_all()
+        return self.deal_repo.filter_deals({"show_archived": False})
+
+    def filter_deals(self, filters: dict) -> list[dict]:
+        return self.deal_repo.filter_deals(filters)
 
     def get_deal(self, deal_id: str) -> dict:
         return self.deal_repo.find_one("deal_id", deal_id)
@@ -63,3 +66,31 @@ class DealService:
 
         self.deal_repo.append_row(record)
         return deal_id
+
+    def update_status(self, deal_id: str, deal_status: str) -> None:
+        updates = {
+            "deal_status": deal_status,
+            "updated_at": now_str(),
+        }
+
+        # ARCHIVED は通常一覧から非表示にする
+        if deal_status == "ARCHIVED":
+            updates["is_active"] = 0
+        else:
+            updates["is_active"] = 1
+
+        self.deal_repo.update_row("deal_id", deal_id, updates)
+
+    def archive_deal(self, deal_id: str) -> None:
+        self.update_status(deal_id, "ARCHIVED")
+
+    def reactivate_deal(self, deal_id: str) -> None:
+        self.deal_repo.update_row(
+            "deal_id",
+            deal_id,
+            {
+                "deal_status": "ACTIVE",
+                "is_active": 1,
+                "updated_at": now_str(),
+            },
+        )

@@ -3,7 +3,7 @@ from django.shortcuts import redirect, render
 
 from apps.core.exceptions import RepositoryError
 from apps.documents.dtos import DocumentUploadDTO
-from apps.documents.forms import DocumentUploadForm
+from apps.documents.forms import DocumentFilterForm, DocumentUploadForm
 from apps.documents.services import DocumentService
 
 
@@ -11,10 +11,15 @@ document_service = DocumentService()
 
 
 def document_list(request):
-    deal_id = request.GET.get("deal_id") or ""
+    filter_form = DocumentFilterForm(request.GET or None)
+
+    filters = {}
+
+    if filter_form.is_valid():
+        filters = filter_form.cleaned_data
 
     try:
-        documents = document_service.list_documents(deal_id=deal_id if deal_id else None)
+        documents = document_service.filter_documents(filters)
     except RepositoryError as e:
         documents = []
         messages.error(request, str(e))
@@ -24,7 +29,8 @@ def document_list(request):
         "documents/document_list.html",
         {
             "documents": documents,
-            "deal_id": deal_id,
+            "filter_form": filter_form,
+            "filters": filters,
         },
     )
 
@@ -67,3 +73,21 @@ def document_upload(request):
             "deal_id": initial_deal_id,
         },
     )
+
+
+def document_delete(request, document_id: str):
+    if request.method != "POST":
+        return redirect("documents:list")
+
+    deal_id = request.POST.get("deal_id") or ""
+
+    try:
+        document_service.soft_delete_document(document_id)
+        messages.success(request, f"資料を削除済みにしました: {document_id}")
+    except RepositoryError as e:
+        messages.error(request, str(e))
+
+    if deal_id:
+        return redirect("deals:detail", deal_id=deal_id)
+
+    return redirect("documents:list")

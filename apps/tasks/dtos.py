@@ -11,3 +11,8 @@ class TaskCreateDTO:
     priority: str = "MEDIUM"
     owner_user_id: str = ""
     due_date: str = ""
+    template_source_id: str = ""
+    evidence_required_flag: int = 0
+    regulation_flag: int = 0
+    why_this_task: str = ""
+    beginner_guidance: str = ""

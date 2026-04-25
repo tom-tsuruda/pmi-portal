@@ -13,10 +13,14 @@ class DocumentService:
         self.document_repo = document_repo or ExcelDocumentRepository()
 
     def list_documents(self, deal_id: str | None = None) -> list[dict]:
-        if deal_id:
-            return self.document_repo.find_by_deal(deal_id)
+        filters = {
+            "deal_id": deal_id or "",
+            "show_deleted": False,
+        }
+        return self.document_repo.filter_documents(filters)
 
-        return self.document_repo.find_all()
+    def filter_documents(self, filters: dict) -> list[dict]:
+        return self.document_repo.filter_documents(filters)
 
     def upload_document(self, dto: DocumentUploadDTO, uploaded_file) -> str:
         last_id = self.document_repo.get_last_document_id()
@@ -85,3 +89,14 @@ class DocumentService:
 
         self.document_repo.append_row(record)
         return document_id
+
+    def soft_delete_document(self, document_id: str) -> None:
+        self.document_repo.update_row(
+            "document_id",
+            document_id,
+            {
+                "status": "DELETED",
+                "deleted_flag": 1,
+                "updated_at": now_str(),
+            },
+        )

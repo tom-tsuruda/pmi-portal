@@ -127,3 +127,107 @@ class RaidCreateForm(forms.Form):
             }
         ),
     )
+
+
+class RaidFilterForm(forms.Form):
+    keyword = forms.CharField(
+        label="キーワード",
+        required=False,
+        widget=forms.TextInput(
+            attrs={
+                "placeholder": "タイトル・内容・対応策で検索",
+            }
+        ),
+    )
+
+    deal_id = forms.CharField(
+        label="案件ID",
+        required=False,
+        widget=forms.TextInput(
+            attrs={
+                "placeholder": "例：DEAL-000001",
+            }
+        ),
+    )
+
+    raid_type = forms.ChoiceField(
+        label="RAID種別",
+        required=False,
+        choices=[
+            ("", "すべて"),
+            ("RISK", "RISK"),
+            ("ASSUMPTION", "ASSUMPTION"),
+            ("ISSUE", "ISSUE"),
+            ("DEPENDENCY", "DEPENDENCY"),
+        ],
+    )
+
+    status = forms.ChoiceField(
+        label="ステータス",
+        required=False,
+        choices=[
+            ("", "すべて"),
+            ("OPEN", "OPEN"),
+            ("IN_PROGRESS", "IN_PROGRESS"),
+            ("WATCH", "WATCH"),
+            ("CLOSED", "CLOSED"),
+        ],
+    )
+
+    phase_id = forms.ChoiceField(
+        label="フェーズ",
+        required=False,
+        choices=[
+            ("", "すべて"),
+            ("PRE_CLOSE", "PRE_CLOSE"),
+            ("DAY1", "DAY1"),
+            ("DAY30", "DAY30"),
+            ("DAY100", "DAY100"),
+            ("TSA", "TSA"),
+            ("POST100", "POST100"),
+        ],
+    )
+
+    workstream_id = forms.ChoiceField(
+        label="ワークストリーム",
+        required=False,
+        choices=[
+            ("", "すべて"),
+            ("PMO", "PMO"),
+            ("HR", "HR"),
+            ("IT", "IT"),
+            ("FINANCE", "FINANCE"),
+            ("LEGAL", "LEGAL"),
+            ("SALES", "SALES"),
+            ("OPS", "OPS"),
+            ("COMMS", "COMMS"),
+        ],
+    )
+
+    escalation_level = forms.ChoiceField(
+        label="重要度",
+        required=False,
+        choices=[
+            ("", "すべて"),
+            ("CRITICAL", "CRITICAL"),
+            ("HIGH", "HIGH"),
+            ("MEDIUM", "MEDIUM"),
+            ("LOW", "LOW"),
+        ],
+    )
+
+    owner_user_id = forms.CharField(
+        label="担当者ID",
+        required=False,
+        widget=forms.TextInput(
+            attrs={
+                "placeholder": "例：u001",
+            }
+        ),
+    )
+
+    show_closed = forms.BooleanField(
+        label="CLOSEDも表示",
+        required=False,
+        initial=False,
+    )

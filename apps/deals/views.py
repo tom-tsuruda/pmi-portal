@@ -3,11 +3,11 @@ from django.shortcuts import redirect, render
 
 from apps.core.exceptions import RecordNotFoundError, RepositoryError
 from apps.deals.dtos import DealCreateDTO
-from apps.deals.forms import DealCreateForm
+from apps.deals.forms import DealCreateForm, DealFilterForm, DealStatusUpdateForm
 from apps.deals.services import DealService
-from apps.tasks.services import TaskService
-from apps.raid.services import RaidService
 from apps.documents.services import DocumentService
+from apps.raid.services import RaidService
+from apps.tasks.services import TaskService
 
 
 deal_service = DealService()
@@ -17,8 +17,15 @@ document_service = DocumentService()
 
 
 def deal_list(request):
+    filter_form = DealFilterForm(request.GET or None)
+
+    filters = {}
+
+    if filter_form.is_valid():
+        filters = filter_form.cleaned_data
+
     try:
-        deals = deal_service.list_deals()
+        deals = deal_service.filter_deals(filters)
     except RepositoryError as e:
         deals = []
         messages.error(request, str(e))
@@ -28,6 +35,8 @@ def deal_list(request):
         "deals/deal_list.html",
         {
             "deals": deals,
+            "filter_form": filter_form,
+            "filters": filters,
         },
     )
 
@@ -42,7 +51,7 @@ def deal_create(request):
             try:
                 deal_id = deal_service.create_deal(dto)
                 messages.success(request, f"案件を登録しました: {deal_id}")
-                return redirect("deals:list")
+                return redirect("deals:detail", deal_id=deal_id)
             except RepositoryError as e:
                 messages.error(request, str(e))
     else:
@@ -72,7 +81,7 @@ def deal_detail(request, deal_id: str):
         messages.error(request, str(e))
         return redirect("deals:list")
 
-    task_total = len(tasks)
+    task_total = len([task for task in tasks if task.get("status") != "CANCELLED"])
     task_done = len([task for task in tasks if task.get("status") == "DONE"])
     task_progress = round((task_done / task_total) * 100) if task_total else 0
 
@@ -92,6 +101,10 @@ def deal_detail(request, deal_id: str):
         ]
     )
 
+    status_form = DealStatusUpdateForm(
+        initial={"deal_status": deal.get("deal_status") or "DRAFT"}
+    )
+
     return render(
         request,
         "deals/deal_detail.html",
@@ -105,5 +118,53 @@ def deal_detail(request, deal_id: str):
             "task_progress": task_progress,
             "open_raid_count": open_raid_count,
             "high_raid_count": high_raid_count,
+            "status_form": status_form,
         },
     )
+
+
+def deal_update_status(request, deal_id: str):
+    if request.method != "POST":
+        return redirect("deals:detail", deal_id=deal_id)
+
+    form = DealStatusUpdateForm(request.POST)
+
+    if form.is_valid():
+        deal_status = form.cleaned_data["deal_status"]
+
+        try:
+            deal_service.update_status(deal_id, deal_status)
+            messages.success(request, f"案件ステータスを更新しました: {deal_status}")
+        except RepositoryError as e:
+            messages.error(request, str(e))
+    else:
+        messages.error(request, "不正な案件ステータスです。")
+
+    return redirect("deals:detail", deal_id=deal_id)
+
+
+def deal_archive(request, deal_id: str):
+    if request.method != "POST":
+        return redirect("deals:detail", deal_id=deal_id)
+
+    try:
+        deal_service.archive_deal(deal_id)
+        messages.success(request, f"案件をアーカイブしました: {deal_id}")
+    except RepositoryError as e:
+        messages.error(request, str(e))
+        return redirect("deals:detail", deal_id=deal_id)
+
+    return redirect("deals:list")
+
+
+def deal_reactivate(request, deal_id: str):
+    if request.method != "POST":
+        return redirect("deals:detail", deal_id=deal_id)
+
+    try:
+        deal_service.reactivate_deal(deal_id)
+        messages.success(request, f"案件を再開しました: {deal_id}")
+    except RepositoryError as e:
+        messages.error(request, str(e))
+
+    return redirect("deals:detail", deal_id=deal_id)

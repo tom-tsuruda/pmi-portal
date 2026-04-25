@@ -3,7 +3,7 @@ from django.shortcuts import redirect, render
 
 from apps.core.exceptions import RepositoryError
 from apps.tasks.dtos import TaskCreateDTO
-from apps.tasks.forms import TaskCreateForm
+from apps.tasks.forms import TaskCreateForm, TaskFilterForm
 from apps.tasks.services import TaskService
 
 
@@ -11,10 +11,15 @@ task_service = TaskService()
 
 
 def task_list(request):
-    deal_id = request.GET.get("deal_id") or ""
+    filter_form = TaskFilterForm(request.GET or None)
+
+    filters = {}
+
+    if filter_form.is_valid():
+        filters = filter_form.cleaned_data
 
     try:
-        tasks = task_service.list_tasks(deal_id=deal_id if deal_id else None)
+        tasks = task_service.filter_tasks(filters)
     except RepositoryError as e:
         tasks = []
         messages.error(request, str(e))
@@ -24,7 +29,8 @@ def task_list(request):
         "tasks/task_list.html",
         {
             "tasks": tasks,
-            "deal_id": deal_id,
+            "filter_form": filter_form,
+            "filters": filters,
         },
     )
 
@@ -69,7 +75,7 @@ def task_update_status(request, task_id: str):
     status = request.POST.get("status")
     deal_id = request.POST.get("deal_id") or ""
 
-    if status not in ["TODO", "IN_PROGRESS", "DONE", "BLOCKED"]:
+    if status not in ["TODO", "IN_PROGRESS", "DONE", "BLOCKED", "CANCELLED"]:
         messages.error(request, "不正なステータスです。")
         if deal_id:
             return redirect("deals:detail", deal_id=deal_id)

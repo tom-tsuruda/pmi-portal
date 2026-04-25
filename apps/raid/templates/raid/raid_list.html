@@ -9,20 +9,63 @@
         <a class="button" href="{% url 'raid:create' %}">新規RAID登録</a>
     </div>
 
-    <form method="get" style="margin-bottom: 20px;">
-        <label for="deal_id">案件IDで絞り込み</label>
-        <div style="display: flex; gap: 8px;">
-            <input
-                type="text"
-                id="deal_id"
-                name="deal_id"
-                value="{{ deal_id }}"
-                placeholder="例：DEAL-000001"
-            >
+    <form method="get" class="filter-box">
+        <div class="filter-grid">
+            <div>
+                {{ filter_form.keyword.label_tag }}
+                {{ filter_form.keyword }}
+            </div>
+
+            <div>
+                {{ filter_form.deal_id.label_tag }}
+                {{ filter_form.deal_id }}
+            </div>
+
+            <div>
+                {{ filter_form.raid_type.label_tag }}
+                {{ filter_form.raid_type }}
+            </div>
+
+            <div>
+                {{ filter_form.status.label_tag }}
+                {{ filter_form.status }}
+            </div>
+
+            <div>
+                {{ filter_form.phase_id.label_tag }}
+                {{ filter_form.phase_id }}
+            </div>
+
+            <div>
+                {{ filter_form.workstream_id.label_tag }}
+                {{ filter_form.workstream_id }}
+            </div>
+
+            <div>
+                {{ filter_form.escalation_level.label_tag }}
+                {{ filter_form.escalation_level }}
+            </div>
+
+            <div>
+                {{ filter_form.owner_user_id.label_tag }}
+                {{ filter_form.owner_user_id }}
+            </div>
+
+            <div class="checkbox-row">
+                {{ filter_form.show_closed }}
+                {{ filter_form.show_closed.label_tag }}
+            </div>
+        </div>
+
+        <div class="form-actions">
             <button class="button" type="submit">絞り込み</button>
             <a class="button-secondary" href="{% url 'raid:list' %}">解除</a>
         </div>
     </form>
+
+    <div style="margin: 16px 0; color: #6b7280;">
+        表示件数：{{ items|length }} 件
+    </div>
 
     {% if items %}
         <table>
@@ -61,7 +104,7 @@
                         <td>{{ item.due_date }}</td>
                         <td>{{ item.status }}</td>
                         <td>
-                            <form method="post" action="{% url 'raid:update_status' item.raid_id %}">
+                            <form method="post" action="{% url 'raid:update_status' item.raid_id %}" style="display: flex; gap: 6px;">
                                 {% csrf_token %}
                                 <select name="status">
                                     <option value="OPEN" {% if item.status == "OPEN" %}selected{% endif %}>OPEN</option>
@@ -78,7 +121,7 @@
         </table>
     {% else %}
         <div class="empty">
-            RAIDデータがありません。まずは新規RAIDを登録してください。
+            条件に一致するRAIDがありません。
         </div>
     {% endif %}
 </div>
