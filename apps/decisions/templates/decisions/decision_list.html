@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+
+{% block title %}意思決定一覧 | PMI Portal{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="page-header">
+        <h2>意思決定一覧</h2>
+        <a class="button" href="{% url 'decisions:create' %}">新規意思決定登録</a>
+    </div>
+
+    <form method="get" class="filter-box">
+        <div class="filter-grid">
+            <div>
+                {{ filter_form.keyword.label_tag }}
+                {{ filter_form.keyword }}
+            </div>
+
+            <div>
+                {{ filter_form.deal_id.label_tag }}
+                {{ filter_form.deal_id }}
+            </div>
+
+            <div>
+                {{ filter_form.phase_id.label_tag }}
+                {{ filter_form.phase_id }}
+            </div>
+
+            <div>
+                {{ filter_form.workstream_id.label_tag }}
+                {{ filter_form.workstream_id }}
+            </div>
+
+            <div>
+                {{ filter_form.decision_type.label_tag }}
+                {{ filter_form.decision_type }}
+            </div>
+
+            <div>
+                {{ filter_form.status.label_tag }}
+                {{ filter_form.status }}
+            </div>
+
+            <div>
+                {{ filter_form.decided_by_user_id.label_tag }}
+                {{ filter_form.decided_by_user_id }}
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <button class="button" type="submit">絞り込み</button>
+            <a class="button-secondary" href="{% url 'decisions:list' %}">解除</a>
+        </div>
+    </form>
+
+    <div style="margin: 16px 0; color: #6b7280;">
+        表示件数：{{ decisions|length }} 件
+    </div>
+
+    {% if decisions %}
+        <table>
+            <thead>
+                <tr>
+                    <th>意思決定ID</th>
+                    <th>案件ID</th>
+                    <th>フェーズ</th>
+                    <th>WS</th>
+                    <th>タイトル</th>
+                    <th>種別</th>
+                    <th>決定者</th>
+                    <th>決定日</th>
+                    <th>ステータス</th>
+                    <th>関連タスク</th>
+                    <th>関連RAID</th>
+                    <th>更新</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for decision in decisions %}
+                    <tr>
+                        <td>{{ decision.decision_id }}</td>
+                        <td>{{ decision.deal_id }}</td>
+                        <td>{{ decision.phase_id }}</td>
+                        <td>{{ decision.workstream_id }}</td>
+                        <td>{{ decision.title }}</td>
+                        <td>{{ decision.decision_type }}</td>
+                        <td>{{ decision.decided_by_user_id }}</td>
+                        <td>{{ decision.decided_on }}</td>
+                        <td>{{ decision.status }}</td>
+                        <td>{{ decision.related_task_id }}</td>
+                        <td>{{ decision.related_raid_id }}</td>
+                        <td>
+                            <form method="post" action="{% url 'decisions:update_status' decision.decision_id %}" style="display: flex; gap: 6px;">
+                                {% csrf_token %}
+                                <input type="hidden" name="deal_id" value="{{ decision.deal_id }}">
+                                <select name="status">
+                                    <option value="DRAFT" {% if decision.status == "DRAFT" %}selected{% endif %}>DRAFT</option>
+                                    <option value="PROPOSED" {% if decision.status == "PROPOSED" %}selected{% endif %}>PROPOSED</option>
+                                    <option value="DECIDED" {% if decision.status == "DECIDED" %}selected{% endif %}>DECIDED</option>
+                                    <option value="SUPERSEDED" {% if decision.status == "SUPERSEDED" %}selected{% endif %}>SUPERSEDED</option>
+                                    <option value="CANCELLED" {% if decision.status == "CANCELLED" %}selected{% endif %}>CANCELLED</option>
+                                </select>
+                                <button class="button" type="submit">更新</button>
+                            </form>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <div class="empty">
+            条件に一致する意思決定がありません。
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

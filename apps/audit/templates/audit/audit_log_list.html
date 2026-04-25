@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+
+{% block title %}操作履歴 | PMI Portal{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="page-header">
+        <h2>操作履歴</h2>
+    </div>
+
+    <form method="get" class="filter-box">
+        <div class="filter-grid">
+            <div>
+                {{ filter_form.keyword.label_tag }}
+                {{ filter_form.keyword }}
+            </div>
+
+            <div>
+                {{ filter_form.deal_id.label_tag }}
+                {{ filter_form.deal_id }}
+            </div>
+
+            <div>
+                {{ filter_form.object_type.label_tag }}
+                {{ filter_form.object_type }}
+            </div>
+
+            <div>
+                {{ filter_form.object_id.label_tag }}
+                {{ filter_form.object_id }}
+            </div>
+
+            <div>
+                {{ filter_form.action_type.label_tag }}
+                {{ filter_form.action_type }}
+            </div>
+
+            <div>
+                {{ filter_form.acted_by_user_id.label_tag }}
+                {{ filter_form.acted_by_user_id }}
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <button class="button" type="submit">絞り込み</button>
+            <a class="button-secondary" href="{% url 'audit:list' %}">解除</a>
+        </div>
+    </form>
+
+    <div style="margin: 16px 0; color: #6b7280;">
+        表示件数：{{ logs|length }} 件
+    </div>
+
+    {% if logs %}
+        <table>
+            <thead>
+                <tr>
+                    <th>監査ID</th>
+                    <th>案件ID</th>
+                    <th>対象種別</th>
+                    <th>対象ID</th>
+                    <th>操作種別</th>
+                    <th>変更前</th>
+                    <th>変更後</th>
+                    <th>操作者</th>
+                    <th>操作日時</th>
+                    <th>IP</th>
+                    <th>メモ</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for log in logs %}
+                    <tr>
+                        <td>{{ log.audit_id }}</td>
+                        <td>{{ log.deal_id }}</td>
+                        <td>{{ log.object_type }}</td>
+                        <td>{{ log.object_id }}</td>
+                        <td>{{ log.action_type }}</td>
+                        <td>{{ log.before_value }}</td>
+                        <td>{{ log.after_value }}</td>
+                        <td>{{ log.acted_by_user_id }}</td>
+                        <td>{{ log.acted_at }}</td>
+                        <td>{{ log.ip_address }}</td>
+                        <td>{{ log.note }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <div class="empty">
+            条件に一致する操作履歴がありません。
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

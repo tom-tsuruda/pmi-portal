@@ -287,4 +287,142 @@
         </div>
     {% endif %}
 </div>
+<div class="card detail-section">
+    <div class="page-header">
+        <h3>この案件の意思決定</h3>
+        <div>
+            <a class="button-secondary" href="{% url 'decisions:list' %}?deal_id={{ deal.deal_id }}">意思決定一覧で見る</a>
+            <a class="button" href="{% url 'decisions:create' %}?deal_id={{ deal.deal_id }}">意思決定追加</a>
+        </div>
+    </div>
+
+    {% if decisions %}
+        <table>
+            <thead>
+                <tr>
+                    <th>意思決定ID</th>
+                    <th>フェーズ</th>
+                    <th>WS</th>
+                    <th>タイトル</th>
+                    <th>種別</th>
+                    <th>決定者</th>
+                    <th>決定日</th>
+                    <th>ステータス</th>
+                    <th>関連タスク</th>
+                    <th>関連RAID</th>
+                    <th>更新</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for decision in decisions %}
+                    <tr>
+                        <td>{{ decision.decision_id }}</td>
+                        <td>{{ decision.phase_id }}</td>
+                        <td>{{ decision.workstream_id }}</td>
+                        <td>{{ decision.title }}</td>
+                        <td>{{ decision.decision_type }}</td>
+                        <td>{{ decision.decided_by_user_id }}</td>
+                        <td>{{ decision.decided_on }}</td>
+                        <td>{{ decision.status }}</td>
+                        <td>{{ decision.related_task_id }}</td>
+                        <td>{{ decision.related_raid_id }}</td>
+                        <td>
+                            {% if decision.decision_id %}
+                                <form method="post" action="{% url 'decisions:update_status' decision.decision_id %}" style="display: flex; gap: 6px;">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="deal_id" value="{{ deal.deal_id }}">
+                                    <select name="status">
+                                        <option value="DRAFT" {% if decision.status == "DRAFT" %}selected{% endif %}>DRAFT</option>
+                                        <option value="PROPOSED" {% if decision.status == "PROPOSED" %}selected{% endif %}>PROPOSED</option>
+                                        <option value="DECIDED" {% if decision.status == "DECIDED" %}selected{% endif %}>DECIDED</option>
+                                        <option value="SUPERSEDED" {% if decision.status == "SUPERSEDED" %}selected{% endif %}>SUPERSEDED</option>
+                                        <option value="CANCELLED" {% if decision.status == "CANCELLED" %}selected{% endif %}>CANCELLED</option>
+                                    </select>
+                                    <button class="button" type="submit">更新</button>
+                                </form>
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <div class="empty">
+            この案件に紐づく意思決定はまだありません。
+        </div>
+    {% endif %}
+</div>
+<div class="card detail-section">
+    <div class="page-header">
+        <h3>この案件の承認</h3>
+        <div>
+            <a class="button-secondary" href="{% url 'approvals:list' %}?deal_id={{ deal.deal_id }}">承認一覧で見る</a>
+            <a class="button" href="{% url 'approvals:create' %}?deal_id={{ deal.deal_id }}">承認依頼追加</a>
+        </div>
+    </div>
+
+    {% if approvals %}
+        <table>
+            <thead>
+                <tr>
+                    <th>承認ID</th>
+                    <th>対象種別</th>
+                    <th>対象ID</th>
+                    <th>ステップ</th>
+                    <th>依頼者</th>
+                    <th>承認者</th>
+                    <th>依頼日時</th>
+                    <th>承認日時</th>
+                    <th>状態</th>
+                    <th>コメント</th>
+                    <th>更新</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for approval in approvals %}
+                    <tr>
+                        <td>{{ approval.approval_id }}</td>
+                        <td>{{ approval.object_type }}</td>
+                        <td>{{ approval.object_id }}</td>
+                        <td>{{ approval.approval_step }}</td>
+                        <td>{{ approval.requester_user_id }}</td>
+                        <td>{{ approval.approver_user_id }}</td>
+                        <td>{{ approval.requested_at }}</td>
+                        <td>{{ approval.approved_at }}</td>
+                        <td>{{ approval.approval_status }}</td>
+                        <td>{{ approval.comment }}</td>
+                        <td>
+                            {% if approval.approval_id %}
+                                <form method="post" action="{% url 'approvals:update_status' approval.approval_id %}" style="display: grid; gap: 6px;">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="deal_id" value="{{ deal.deal_id }}">
+
+                                    <select name="approval_status">
+                                        <option value="REQUESTED" {% if approval.approval_status == "REQUESTED" %}selected{% endif %}>REQUESTED</option>
+                                        <option value="APPROVED" {% if approval.approval_status == "APPROVED" %}selected{% endif %}>APPROVED</option>
+                                        <option value="REJECTED" {% if approval.approval_status == "REJECTED" %}selected{% endif %}>REJECTED</option>
+                                        <option value="RETURNED" {% if approval.approval_status == "RETURNED" %}selected{% endif %}>RETURNED</option>
+                                        <option value="CANCELLED" {% if approval.approval_status == "CANCELLED" %}selected{% endif %}>CANCELLED</option>
+                                    </select>
+
+                                    <input type="text" name="comment" value="{{ approval.comment }}" placeholder="コメント">
+
+                                    <button class="button" type="submit">更新</button>
+                                </form>
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <div class="empty">
+            この案件に紐づく承認はまだありません。
+        </div>
+    {% endif %}
+</div>
 {% endblock %}

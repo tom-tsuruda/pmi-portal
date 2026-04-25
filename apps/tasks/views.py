@@ -1,6 +1,7 @@
 from django.contrib import messages
 from django.shortcuts import redirect, render
 
+from apps.audit.services import AuditLogService
 from apps.core.exceptions import RepositoryError
 from apps.tasks.dtos import TaskCreateDTO
 from apps.tasks.forms import TaskCreateForm, TaskFilterForm
@@ -8,6 +9,7 @@ from apps.tasks.services import TaskService
 
 
 task_service = TaskService()
+audit_service = AuditLogService()
 
 
 def task_list(request):
@@ -46,6 +48,19 @@ def task_create(request):
 
             try:
                 task_id = task_service.create_task(dto)
+
+                audit_service.log(
+                    deal_id=dto.deal_id,
+                    object_type="TASK",
+                    object_id=task_id,
+                    action_type="CREATE",
+                    before_value="",
+                    after_value=dto.title,
+                    acted_by_user_id=dto.owner_user_id,
+                    ip_address=request.META.get("REMOTE_ADDR", ""),
+                    note="タスクを登録しました。",
+                )
+
                 messages.success(request, f"タスクを登録しました: {task_id}")
 
                 if dto.deal_id:
@@ -83,7 +98,21 @@ def task_update_status(request, task_id: str):
 
     try:
         task_service.update_status(task_id, status)
+
+        audit_service.log(
+            deal_id=deal_id,
+            object_type="TASK",
+            object_id=task_id,
+            action_type="STATUS_UPDATE",
+            before_value="",
+            after_value=status,
+            acted_by_user_id="",
+            ip_address=request.META.get("REMOTE_ADDR", ""),
+            note="タスクステータスを更新しました。",
+        )
+
         messages.success(request, f"ステータスを更新しました: {task_id}")
+
     except RepositoryError as e:
         messages.error(request, str(e))
 

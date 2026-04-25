@@ -8,13 +8,15 @@ from apps.deals.services import DealService
 from apps.documents.services import DocumentService
 from apps.raid.services import RaidService
 from apps.tasks.services import TaskService
-
+from apps.decisions.services import DecisionService
+from apps.approvals.services import ApprovalService
 
 deal_service = DealService()
 task_service = TaskService()
 raid_service = RaidService()
 document_service = DocumentService()
-
+decision_service = DecisionService()
+approval_service = ApprovalService()
 
 def deal_list(request):
     filter_form = DealFilterForm(request.GET or None)
@@ -69,9 +71,11 @@ def deal_create(request):
 def deal_detail(request, deal_id: str):
     try:
         deal = deal_service.get_deal(deal_id)
+        decisions = decision_service.list_decisions(deal_id=deal_id)
         tasks = task_service.list_tasks(deal_id=deal_id)
         raid_items = raid_service.list_items(deal_id=deal_id)
         documents = document_service.list_documents(deal_id=deal_id)
+        approvals = approval_service.list_approvals(deal_id=deal_id)
 
     except RecordNotFoundError:
         messages.error(request, f"案件が見つかりません: {deal_id}")
@@ -119,6 +123,8 @@ def deal_detail(request, deal_id: str):
             "open_raid_count": open_raid_count,
             "high_raid_count": high_raid_count,
             "status_form": status_form,
+            "decisions": decisions,
+            "approvals": approvals,
         },
     )
 

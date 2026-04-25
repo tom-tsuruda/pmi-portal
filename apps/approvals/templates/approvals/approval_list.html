@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+
+{% block title %}承認一覧 | PMI Portal{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="page-header">
+        <h2>承認一覧</h2>
+        <a class="button" href="{% url 'approvals:create' %}">新規承認依頼</a>
+    </div>
+
+    <form method="get" class="filter-box">
+        <div class="filter-grid">
+            <div>
+                {{ filter_form.keyword.label_tag }}
+                {{ filter_form.keyword }}
+            </div>
+
+            <div>
+                {{ filter_form.deal_id.label_tag }}
+                {{ filter_form.deal_id }}
+            </div>
+
+            <div>
+                {{ filter_form.object_type.label_tag }}
+                {{ filter_form.object_type }}
+            </div>
+
+            <div>
+                {{ filter_form.object_id.label_tag }}
+                {{ filter_form.object_id }}
+            </div>
+
+            <div>
+                {{ filter_form.approval_status.label_tag }}
+                {{ filter_form.approval_status }}
+            </div>
+
+            <div>
+                {{ filter_form.requester_user_id.label_tag }}
+                {{ filter_form.requester_user_id }}
+            </div>
+
+            <div>
+                {{ filter_form.approver_user_id.label_tag }}
+                {{ filter_form.approver_user_id }}
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <button class="button" type="submit">絞り込み</button>
+            <a class="button-secondary" href="{% url 'approvals:list' %}">解除</a>
+        </div>
+    </form>
+
+    <div style="margin: 16px 0; color: #6b7280;">
+        表示件数：{{ approvals|length }} 件
+    </div>
+
+    {% if approvals %}
+        <table>
+            <thead>
+                <tr>
+                    <th>承認ID</th>
+                    <th>案件ID</th>
+                    <th>対象種別</th>
+                    <th>対象ID</th>
+                    <th>ステップ</th>
+                    <th>依頼者</th>
+                    <th>承認者</th>
+                    <th>依頼日時</th>
+                    <th>承認日時</th>
+                    <th>状態</th>
+                    <th>コメント</th>
+                    <th>更新</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for approval in approvals %}
+                    <tr>
+                        <td>{{ approval.approval_id }}</td>
+                        <td>{{ approval.deal_id }}</td>
+                        <td>{{ approval.object_type }}</td>
+                        <td>{{ approval.object_id }}</td>
+                        <td>{{ approval.approval_step }}</td>
+                        <td>{{ approval.requester_user_id }}</td>
+                        <td>{{ approval.approver_user_id }}</td>
+                        <td>{{ approval.requested_at }}</td>
+                        <td>{{ approval.approved_at }}</td>
+                        <td>{{ approval.approval_status }}</td>
+                        <td>{{ approval.comment }}</td>
+                        <td>
+                            {% if approval.approval_id %}
+                                <form method="post" action="{% url 'approvals:update_status' approval.approval_id %}" style="display: grid; gap: 6px;">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="deal_id" value="{{ approval.deal_id }}">
+
+                                    <select name="approval_status">
+                                        <option value="REQUESTED" {% if approval.approval_status == "REQUESTED" %}selected{% endif %}>REQUESTED</option>
+                                        <option value="APPROVED" {% if approval.approval_status == "APPROVED" %}selected{% endif %}>APPROVED</option>
+                                        <option value="REJECTED" {% if approval.approval_status == "REJECTED" %}selected{% endif %}>REJECTED</option>
+                                        <option value="RETURNED" {% if approval.approval_status == "RETURNED" %}selected{% endif %}>RETURNED</option>
+                                        <option value="CANCELLED" {% if approval.approval_status == "CANCELLED" %}selected{% endif %}>CANCELLED</option>
+                                    </select>
+
+                                    <input type="text" name="comment" value="{{ approval.comment }}" placeholder="コメント">
+
+                                    <button class="button" type="submit">更新</button>
+                                </form>
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <div class="empty">
+            条件に一致する承認データがありません。
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

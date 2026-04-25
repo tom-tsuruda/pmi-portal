@@ -5,10 +5,10 @@ from apps.core.exceptions import RepositoryError
 from apps.documents.dtos import DocumentUploadDTO
 from apps.documents.forms import DocumentFilterForm, DocumentUploadForm
 from apps.documents.services import DocumentService
-
+from apps.audit.services import AuditLogService
 
 document_service = DocumentService()
-
+audit_service = AuditLogService()
 
 def document_list(request):
     filter_form = DocumentFilterForm(request.GET or None)
@@ -91,3 +91,15 @@ def document_delete(request, document_id: str):
         return redirect("deals:detail", deal_id=deal_id)
 
     return redirect("documents:list")
+
+    audit_service.log(
+        deal_id=deal_id,
+        object_type="DOCUMENT",
+        object_id=document_id,
+        action_type="SOFT_DELETE",
+        before_value="ACTIVE",
+        after_value="DELETED",
+        acted_by_user_id="",
+        ip_address=request.META.get("REMOTE_ADDR", ""),
+        note="資料を削除済みにしました。",
+    )

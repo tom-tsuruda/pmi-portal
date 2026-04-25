@@ -51,6 +51,9 @@ INSTALLED_APPS = [
     "apps.raid",
     "apps.documents",
     "apps.questionnaire",
+    "apps.decisions",
+    "apps.approvals",
+    "apps.audit",
 ]
 
 MIDDLEWARE = [
