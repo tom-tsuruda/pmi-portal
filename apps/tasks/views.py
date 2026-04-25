@@ -41,7 +41,12 @@ def task_create(request):
             try:
                 task_id = task_service.create_task(dto)
                 messages.success(request, f"タスクを登録しました: {task_id}")
+
+                if dto.deal_id:
+                    return redirect("deals:detail", deal_id=dto.deal_id)
+
                 return redirect("tasks:list")
+
             except RepositoryError as e:
                 messages.error(request, str(e))
     else:
@@ -52,6 +57,7 @@ def task_create(request):
         "tasks/task_create.html",
         {
             "form": form,
+            "deal_id": initial_deal_id,
         },
     )
 
@@ -61,9 +67,12 @@ def task_update_status(request, task_id: str):
         return redirect("tasks:list")
 
     status = request.POST.get("status")
+    deal_id = request.POST.get("deal_id") or ""
 
     if status not in ["TODO", "IN_PROGRESS", "DONE", "BLOCKED"]:
         messages.error(request, "不正なステータスです。")
+        if deal_id:
+            return redirect("deals:detail", deal_id=deal_id)
         return redirect("tasks:list")
 
     try:
@@ -71,5 +80,8 @@ def task_update_status(request, task_id: str):
         messages.success(request, f"ステータスを更新しました: {task_id}")
     except RepositoryError as e:
         messages.error(request, str(e))
+
+    if deal_id:
+        return redirect("deals:detail", deal_id=deal_id)
 
     return redirect("tasks:list")

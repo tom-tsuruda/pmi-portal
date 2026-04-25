@@ -48,7 +48,12 @@ def document_upload(request):
             try:
                 document_id = document_service.upload_document(dto, uploaded_file)
                 messages.success(request, f"資料を登録しました: {document_id}")
+
+                if dto.deal_id:
+                    return redirect("deals:detail", deal_id=dto.deal_id)
+
                 return redirect("documents:list")
+
             except RepositoryError as e:
                 messages.error(request, str(e))
     else:
@@ -59,5 +64,6 @@ def document_upload(request):
         "documents/document_upload.html",
         {
             "form": form,
+            "deal_id": initial_deal_id,
         },
     )

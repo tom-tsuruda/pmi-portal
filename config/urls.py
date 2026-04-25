@@ -10,4 +10,5 @@ urlpatterns = [
     path("tasks/", include("apps.tasks.urls")),
     path("raid/", include("apps.raid.urls")),
     path("documents/", include("apps.documents.urls")),
+    path("questionnaire/", include("apps.questionnaire.urls")),
 ]

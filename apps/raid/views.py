@@ -41,7 +41,12 @@ def raid_create(request):
             try:
                 raid_id = raid_service.create_item(dto)
                 messages.success(request, f"RAID項目を登録しました: {raid_id}")
+
+                if dto.deal_id:
+                    return redirect("deals:detail", deal_id=dto.deal_id)
+
                 return redirect("raid:list")
+
             except RepositoryError as e:
                 messages.error(request, str(e))
     else:
@@ -52,6 +57,7 @@ def raid_create(request):
         "raid/raid_create.html",
         {
             "form": form,
+            "deal_id": initial_deal_id,
         },
     )
 
@@ -61,9 +67,12 @@ def raid_update_status(request, raid_id: str):
         return redirect("raid:list")
 
     status = request.POST.get("status")
+    deal_id = request.POST.get("deal_id") or ""
 
     if status not in ["OPEN", "IN_PROGRESS", "WATCH", "CLOSED"]:
         messages.error(request, "不正なステータスです。")
+        if deal_id:
+            return redirect("deals:detail", deal_id=deal_id)
         return redirect("raid:list")
 
     try:
@@ -71,5 +80,8 @@ def raid_update_status(request, raid_id: str):
         messages.success(request, f"ステータスを更新しました: {raid_id}")
     except RepositoryError as e:
         messages.error(request, str(e))
+
+    if deal_id:
+        return redirect("deals:detail", deal_id=deal_id)
 
     return redirect("raid:list")

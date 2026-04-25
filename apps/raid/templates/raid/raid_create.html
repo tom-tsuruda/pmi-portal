@@ -6,7 +6,11 @@
 <div class="card">
     <div class="page-header">
         <h2>新規RAID登録</h2>
-        <a class="button-secondary" href="{% url 'raid:list' %}">一覧へ戻る</a>
+        {% if deal_id %}
+            <a class="button-secondary" href="{% url 'deals:detail' deal_id %}">案件詳細へ戻る</a>
+        {% else %}
+            <a class="button-secondary" href="{% url 'raid:list' %}">一覧へ戻る</a>
+        {% endif %}
     </div>
 
     <form method="post">

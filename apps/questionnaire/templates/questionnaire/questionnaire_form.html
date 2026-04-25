@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+
+{% block title %}質問票 | PMI Portal{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="page-header">
+        <div>
+            <h2>質問票</h2>
+            <p style="margin: 6px 0 0; color: #6b7280;">
+                案件ID：{{ deal_id }}
+            </p>
+        </div>
+        <a class="button-secondary" href="{% url 'deals:detail' deal_id %}">案件詳細へ戻る</a>
+    </div>
+
+    <p style="color: #4b5563; margin-bottom: 24px;">
+        以下の質問に回答すると、PMIで必要になりやすい初期タスクを自動生成します。
+    </p>
+
+    <form method="post">
+        {% csrf_token %}
+
+        {{ form.as_p }}
+
+        <div class="form-actions">
+            <button class="button" type="submit">回答を保存してタスク生成</button>
+        </div>
+    </form>
+</div>
+{% endblock %}

@@ -1,0 +1,266 @@
+{% extends "base.html" %}
+
+{% block title %}案件詳細 | PMI Portal{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="page-header">
+        <div>
+            <h2>{{ deal.deal_name }}</h2>
+            <p style="margin: 6px 0 0; color: #6b7280;">
+                {{ deal.deal_id }} / {{ deal.target_company_name }}
+            </p>
+        </div>
+        <div>
+            <a class="button" href="{% url 'questionnaire:start' deal.deal_id %}">質問票からタスク生成</a>
+            <a class="button-secondary" href="{% url 'deals:list' %}">案件一覧へ戻る</a>
+        </div>
+    </div>
+
+    <div class="summary-grid">
+        <div class="summary-box">
+            <div class="summary-label">タスク進捗</div>
+            <div class="summary-value">{{ task_progress }}%</div>
+            <div class="summary-sub">{{ task_done }} / {{ task_total }} 件完了</div>
+        </div>
+
+        <div class="summary-box">
+            <div class="summary-label">未解決RAID</div>
+            <div class="summary-value">{{ open_raid_count }}</div>
+            <div class="summary-sub">OPEN / IN_PROGRESS / WATCH</div>
+        </div>
+
+        <div class="summary-box">
+            <div class="summary-label">重要RAID</div>
+            <div class="summary-value">{{ high_raid_count }}</div>
+            <div class="summary-sub">HIGH / CRITICAL</div>
+        </div>
+
+        <div class="summary-box">
+            <div class="summary-label">資料数</div>
+            <div class="summary-value">{{ documents|length }}</div>
+            <div class="summary-sub">登録済み資料</div>
+        </div>
+    </div>
+</div>
+
+<div class="card detail-section">
+    <div class="page-header">
+        <h3>案件基本情報</h3>
+    </div>
+
+    <table>
+        <tbody>
+            <tr>
+                <th>案件ID</th>
+                <td>{{ deal.deal_id }}</td>
+                <th>案件コード</th>
+                <td>{{ deal.deal_code }}</td>
+            </tr>
+            <tr>
+                <th>案件名</th>
+                <td>{{ deal.deal_name }}</td>
+                <th>対象会社</th>
+                <td>{{ deal.target_company_name }}</td>
+            </tr>
+            <tr>
+                <th>案件種別</th>
+                <td>{{ deal.deal_type }}</td>
+                <th>統合モデル</th>
+                <td>{{ deal.integration_model }}</td>
+            </tr>
+            <tr>
+                <th>地域</th>
+                <td>{{ deal.region_main }}</td>
+                <th>業界</th>
+                <td>{{ deal.industry }}</td>
+            </tr>
+            <tr>
+                <th>案件ステータス</th>
+                <td>{{ deal.deal_status }}</td>
+                <th>担当者ID</th>
+                <td>{{ deal.owner_user_id }}</td>
+            </tr>
+            <tr>
+                <th>Day1日</th>
+                <td>{{ deal.day1_date }}</td>
+                <th>Day100日</th>
+                <td>{{ deal.day100_date }}</td>
+            </tr>
+            <tr>
+                <th>説明</th>
+                <td colspan="3">{{ deal.description }}</td>
+            </tr>
+            <tr>
+                <th>初心者向け説明</th>
+                <td colspan="3">{{ deal.beginner_guidance }}</td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+
+<div class="card detail-section">
+    <div class="page-header">
+        <h3>この案件のタスク</h3>
+        <div>
+            <a class="button-secondary" href="{% url 'tasks:list' %}?deal_id={{ deal.deal_id }}">タスク一覧で見る</a>
+            <a class="button" href="{% url 'tasks:create' %}?deal_id={{ deal.deal_id }}">タスク追加</a>
+        </div>
+    </div>
+
+    {% if tasks %}
+        <table>
+            <thead>
+                <tr>
+                    <th>タスクID</th>
+                    <th>フェーズ</th>
+                    <th>WS</th>
+                    <th>タスク名</th>
+                    <th>優先度</th>
+                    <th>状態</th>
+                    <th>担当者</th>
+                    <th>期限</th>
+                    <th>更新</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for task in tasks %}
+                    <tr>
+                        <td>{{ task.task_id }}</td>
+                        <td>{{ task.phase_id }}</td>
+                        <td>{{ task.workstream_id }}</td>
+                        <td>{{ task.title }}</td>
+                        <td>{{ task.priority }}</td>
+                        <td>{{ task.status }}</td>
+                        <td>{{ task.owner_user_id }}</td>
+                        <td>{{ task.due_date }}</td>
+                        <td>
+                            <form method="post" action="{% url 'tasks:update_status' task.task_id %}" style="display: flex; gap: 6px;">
+                                {% csrf_token %}
+                                <input type="hidden" name="deal_id" value="{{ deal.deal_id }}">
+                                <select name="status">
+                                    <option value="TODO" {% if task.status == "TODO" %}selected{% endif %}>TODO</option>
+                                    <option value="IN_PROGRESS" {% if task.status == "IN_PROGRESS" %}selected{% endif %}>IN_PROGRESS</option>
+                                    <option value="DONE" {% if task.status == "DONE" %}selected{% endif %}>DONE</option>
+                                    <option value="BLOCKED" {% if task.status == "BLOCKED" %}selected{% endif %}>BLOCKED</option>
+                                </select>
+                                <button class="button" type="submit">更新</button>
+                            </form>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <div class="empty">
+            この案件に紐づくタスクはまだありません。
+        </div>
+    {% endif %}
+</div>
+
+<div class="card detail-section">
+    <div class="page-header">
+        <h3>この案件のRAID</h3>
+        <div>
+            <a class="button-secondary" href="{% url 'raid:list' %}?deal_id={{ deal.deal_id }}">RAID一覧で見る</a>
+            <a class="button" href="{% url 'raid:create' %}?deal_id={{ deal.deal_id }}">RAID追加</a>
+        </div>
+    </div>
+
+    {% if raid_items %}
+        <table>
+            <thead>
+                <tr>
+                    <th>RAID ID</th>
+                    <th>種別</th>
+                    <th>フェーズ</th>
+                    <th>WS</th>
+                    <th>タイトル</th>
+                    <th>スコア</th>
+                    <th>重要度</th>
+                    <th>状態</th>
+                    <th>期限</th>
+                    <th>更新</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in raid_items %}
+                    <tr>
+                        <td>{{ item.raid_id }}</td>
+                        <td>{{ item.raid_type }}</td>
+                        <td>{{ item.phase_id }}</td>
+                        <td>{{ item.workstream_id }}</td>
+                        <td>{{ item.title }}</td>
+                        <td>{{ item.score }}</td>
+                        <td>{{ item.escalation_level }}</td>
+                        <td>{{ item.status }}</td>
+                        <td>{{ item.due_date }}</td>
+                        <td>
+                            <form method="post" action="{% url 'raid:update_status' item.raid_id %}" style="display: flex; gap: 6px;">
+                                {% csrf_token %}
+                                <input type="hidden" name="deal_id" value="{{ deal.deal_id }}">
+                                <select name="status">
+                                    <option value="OPEN" {% if item.status == "OPEN" %}selected{% endif %}>OPEN</option>
+                                    <option value="IN_PROGRESS" {% if item.status == "IN_PROGRESS" %}selected{% endif %}>IN_PROGRESS</option>
+                                    <option value="WATCH" {% if item.status == "WATCH" %}selected{% endif %}>WATCH</option>
+                                    <option value="CLOSED" {% if item.status == "CLOSED" %}selected{% endif %}>CLOSED</option>
+                                </select>
+                                <button class="button" type="submit">更新</button>
+                            </form>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <div class="empty">
+            この案件に紐づくRAIDはまだありません。
+        </div>
+    {% endif %}
+</div>
+
+<div class="card detail-section">
+    <div class="page-header">
+        <h3>この案件の資料</h3>
+        <div>
+            <a class="button-secondary" href="{% url 'documents:list' %}?deal_id={{ deal.deal_id }}">資料一覧で見る</a>
+            <a class="button" href="{% url 'documents:upload' %}?deal_id={{ deal.deal_id }}">資料アップロード</a>
+        </div>
+    </div>
+
+    {% if documents %}
+        <table>
+            <thead>
+                <tr>
+                    <th>資料ID</th>
+                    <th>フェーズ</th>
+                    <th>WS</th>
+                    <th>資料タイトル</th>
+                    <th>種別</th>
+                    <th>ファイル名</th>
+                    <th>保存先</th>
+                    <th>作成日時</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for doc in documents %}
+                    <tr>
+                        <td>{{ doc.document_id }}</td>
+                        <td>{{ doc.phase_id }}</td>
+                        <td>{{ doc.workstream_id }}</td>
+                        <td>{{ doc.document_title }}</td>
+                        <td>{{ doc.document_type }}</td>
+                        <td>{{ doc.file_name }}</td>
+                        <td>{{ doc.storage_path }}</td>
+                        <td>{{ doc.created_at }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <div class="empty">
+            この案件に紐づく資料はまだありません。
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
