@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+
+{% block title %}資料一覧 | PMI Portal{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="page-header">
+        <h2>資料一覧</h2>
+        <a class="button" href="{% url 'documents:upload' %}">資料アップロード</a>
+    </div>
+
+    <form method="get" style="margin-bottom: 20px;">
+        <label for="deal_id">案件IDで絞り込み</label>
+        <div style="display: flex; gap: 8px;">
+            <input
+                type="text"
+                id="deal_id"
+                name="deal_id"
+                value="{{ deal_id }}"
+                placeholder="例：DEAL-000001"
+            >
+            <button class="button" type="submit">絞り込み</button>
+            <a class="button-secondary" href="{% url 'documents:list' %}">解除</a>
+        </div>
+    </form>
+
+    {% if documents %}
+        <table>
+            <thead>
+                <tr>
+                    <th>資料ID</th>
+                    <th>案件ID</th>
+                    <th>フェーズ</th>
+                    <th>WS</th>
+                    <th>タイトル</th>
+                    <th>種別</th>
+                    <th>ファイル名</th>
+                    <th>状態</th>
+                    <th>担当者</th>
+                    <th>保存先</th>
+                    <th>作成日時</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for doc in documents %}
+                    <tr>
+                        <td>{{ doc.document_id }}</td>
+                        <td>{{ doc.deal_id }}</td>
+                        <td>{{ doc.phase_id }}</td>
+                        <td>{{ doc.workstream_id }}</td>
+                        <td>{{ doc.document_title }}</td>
+                        <td>{{ doc.document_type }}</td>
+                        <td>{{ doc.file_name }}</td>
+                        <td>{{ doc.status }}</td>
+                        <td>{{ doc.owner_user_id }}</td>
+                        <td>{{ doc.storage_path }}</td>
+                        <td>{{ doc.created_at }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <div class="empty">
+            資料データがありません。まずは資料をアップロードしてください。
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

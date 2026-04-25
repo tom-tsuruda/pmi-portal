@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+
+{% block title %}案件一覧 | PMI Portal{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="page-header">
+        <h2>案件一覧</h2>
+        <a class="button" href="{% url 'deals:create' %}">新規案件登録</a>
+    </div>
+
+    {% if deals %}
+        <table>
+            <thead>
+                <tr>
+                    <th>案件ID</th>
+                    <th>案件名</th>
+                    <th>対象会社</th>
+                    <th>案件種別</th>
+                    <th>地域</th>
+                    <th>担当者ID</th>
+                    <th>作成日時</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for deal in deals %}
+                    <tr>
+                        <td>{{ deal.deal_id }}</td>
+                        <td>{{ deal.deal_name }}</td>
+                        <td>{{ deal.target_company_name }}</td>
+                        <td>{{ deal.deal_type }}</td>
+                        <td>{{ deal.region_main }}</td>
+                        <td>{{ deal.owner_user_id }}</td>
+                        <td>{{ deal.created_at }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <div class="empty">
+            案件データがありません。まずは新規案件を登録してください。
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

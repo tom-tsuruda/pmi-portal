@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+
+{% block title %}案件登録 | PMI Portal{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="page-header">
+        <h2>新規案件登録</h2>
+        <a class="button-secondary" href="{% url 'deals:list' %}">一覧へ戻る</a>
+    </div>
+
+    <form method="post">
+        {% csrf_token %}
+
+        {{ form.as_p }}
+
+        <div class="form-actions">
+            <button class="button" type="submit">登録する</button>
+        </div>
+    </form>
+</div>
+{% endblock %}

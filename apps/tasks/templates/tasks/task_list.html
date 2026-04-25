@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+
+{% block title %}タスク一覧 | PMI Portal{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="page-header">
+        <h2>タスク一覧</h2>
+        <a class="button" href="{% url 'tasks:create' %}">新規タスク登録</a>
+    </div>
+
+    <form method="get" style="margin-bottom: 20px;">
+        <label for="deal_id">案件IDで絞り込み</label>
+        <div style="display: flex; gap: 8px;">
+            <input
+                type="text"
+                id="deal_id"
+                name="deal_id"
+                value="{{ deal_id }}"
+                placeholder="例：DEAL-000001"
+            >
+            <button class="button" type="submit">絞り込み</button>
+            <a class="button-secondary" href="{% url 'tasks:list' %}">解除</a>
+        </div>
+    </form>
+
+    {% if tasks %}
+        <table>
+            <thead>
+                <tr>
+                    <th>タスクID</th>
+                    <th>案件ID</th>
+                    <th>フェーズ</th>
+                    <th>WS</th>
+                    <th>タスク名</th>
+                    <th>優先度</th>
+                    <th>ステータス</th>
+                    <th>担当者</th>
+                    <th>期限</th>
+                    <th>更新</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for task in tasks %}
+                    <tr>
+                        <td>{{ task.task_id }}</td>
+                        <td>{{ task.deal_id }}</td>
+                        <td>{{ task.phase_id }}</td>
+                        <td>{{ task.workstream_id }}</td>
+                        <td>{{ task.title }}</td>
+                        <td>{{ task.priority }}</td>
+                        <td>{{ task.status }}</td>
+                        <td>{{ task.owner_user_id }}</td>
+                        <td>{{ task.due_date }}</td>
+                        <td>
+                            <form method="post" action="{% url 'tasks:update_status' task.task_id %}">
+                                {% csrf_token %}
+                                <select name="status">
+                                    <option value="TODO" {% if task.status == "TODO" %}selected{% endif %}>TODO</option>
+                                    <option value="IN_PROGRESS" {% if task.status == "IN_PROGRESS" %}selected{% endif %}>IN_PROGRESS</option>
+                                    <option value="DONE" {% if task.status == "DONE" %}selected{% endif %}>DONE</option>
+                                    <option value="BLOCKED" {% if task.status == "BLOCKED" %}selected{% endif %}>BLOCKED</option>
+                                </select>
+                                <button class="button" type="submit">更新</button>
+                            </form>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <div class="empty">
+            タスクデータがありません。まずは新規タスクを登録してください。
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

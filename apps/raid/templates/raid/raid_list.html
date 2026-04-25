@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+
+{% block title %}RAID一覧 | PMI Portal{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="page-header">
+        <h2>RAID一覧</h2>
+        <a class="button" href="{% url 'raid:create' %}">新規RAID登録</a>
+    </div>
+
+    <form method="get" style="margin-bottom: 20px;">
+        <label for="deal_id">案件IDで絞り込み</label>
+        <div style="display: flex; gap: 8px;">
+            <input
+                type="text"
+                id="deal_id"
+                name="deal_id"
+                value="{{ deal_id }}"
+                placeholder="例：DEAL-000001"
+            >
+            <button class="button" type="submit">絞り込み</button>
+            <a class="button-secondary" href="{% url 'raid:list' %}">解除</a>
+        </div>
+    </form>
+
+    {% if items %}
+        <table>
+            <thead>
+                <tr>
+                    <th>RAID ID</th>
+                    <th>案件ID</th>
+                    <th>種別</th>
+                    <th>フェーズ</th>
+                    <th>WS</th>
+                    <th>タイトル</th>
+                    <th>可能性</th>
+                    <th>影響</th>
+                    <th>スコア</th>
+                    <th>重要度</th>
+                    <th>担当者</th>
+                    <th>期限</th>
+                    <th>状態</th>
+                    <th>更新</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in items %}
+                    <tr>
+                        <td>{{ item.raid_id }}</td>
+                        <td>{{ item.deal_id }}</td>
+                        <td>{{ item.raid_type }}</td>
+                        <td>{{ item.phase_id }}</td>
+                        <td>{{ item.workstream_id }}</td>
+                        <td>{{ item.title }}</td>
+                        <td>{{ item.probability }}</td>
+                        <td>{{ item.impact }}</td>
+                        <td>{{ item.score }}</td>
+                        <td>{{ item.escalation_level }}</td>
+                        <td>{{ item.owner_user_id }}</td>
+                        <td>{{ item.due_date }}</td>
+                        <td>{{ item.status }}</td>
+                        <td>
+                            <form method="post" action="{% url 'raid:update_status' item.raid_id %}">
+                                {% csrf_token %}
+                                <select name="status">
+                                    <option value="OPEN" {% if item.status == "OPEN" %}selected{% endif %}>OPEN</option>
+                                    <option value="IN_PROGRESS" {% if item.status == "IN_PROGRESS" %}selected{% endif %}>IN_PROGRESS</option>
+                                    <option value="WATCH" {% if item.status == "WATCH" %}selected{% endif %}>WATCH</option>
+                                    <option value="CLOSED" {% if item.status == "CLOSED" %}selected{% endif %}>CLOSED</option>
+                                </select>
+                                <button class="button" type="submit">更新</button>
+                            </form>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <div class="empty">
+            RAIDデータがありません。まずは新規RAIDを登録してください。
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
