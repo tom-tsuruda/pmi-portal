@@ -270,12 +270,68 @@
         .button-danger:hover {
             background: #b91c1c;
         }
+        .summary-link {
+            text-decoration: none;
+            color: inherit;
+        }
+
+        .summary-link:hover .summary-box {
+            border-color: #2563eb;
+            box-shadow: 0 6px 18px rgba(37, 99, 235, 0.12);
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+        }
+
+        @media (max-width: 1000px) {
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        @media print {
+    body {
+        background: white;
+        color: #111827;
+    }
+
+    header,
+    nav,
+    .no-print,
+    .button,
+    .button-secondary,
+    .button-danger {
+        display: none !important;
+    }
+
+    .card {
+        box-shadow: none;
+        border: 1px solid #e5e7eb;
+        page-break-inside: avoid;
+    }
+
+    .detail-section {
+        page-break-inside: avoid;
+    }
+
+    table {
+        page-break-inside: auto;
+    }
+
+    tr {
+        page-break-inside: avoid;
+        page-break-after: auto;
+    }
+}
     </style>
 </head>
 <body>
 <header>
     <h1>PMI Portal</h1>
     <nav>
+        <a href="{% url 'dashboard:home' %}">Home</a>
         <a href="{% url 'deals:list' %}">案件一覧</a>
         <a href="{% url 'deals:create' %}">案件登録</a>
         <a href="{% url 'tasks:list' %}">タスク一覧</a>

@@ -1,0 +1,180 @@
+{% extends "base.html" %}
+
+{% block title %}Portal Home | PMI Portal{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="page-header">
+        <div>
+            <h2>PMI Portal Home</h2>
+            <p style="margin: 6px 0 0; color: #6b7280;">
+                案件・タスク・RAID・承認・操作履歴の全体状況を確認します。
+            </p>
+        </div>
+        <div>
+            <a class="button" href="{% url 'deals:create' %}">新規案件登録</a>
+            <a class="button-secondary" href="{% url 'deals:list' %}">案件一覧</a>
+        </div>
+    </div>
+
+    <div class="summary-grid">
+        <a class="summary-link" href="{% url 'deals:list' %}">
+            <div class="summary-box">
+                <div class="summary-label">進行中案件</div>
+                <div class="summary-value">{{ active_deal_count }}</div>
+                <div class="summary-sub">完了・中止・アーカイブ以外</div>
+            </div>
+        </a>
+
+        <a class="summary-link" href="{% url 'tasks:list' %}">
+            <div class="summary-box">
+                <div class="summary-label">未完了タスク</div>
+                <div class="summary-value">{{ incomplete_task_count }}</div>
+                <div class="summary-sub">DONE / CANCELLED 以外</div>
+            </div>
+        </a>
+
+        <a class="summary-link" href="{% url 'tasks:list' %}">
+            <div class="summary-box">
+                <div class="summary-label">期限超過タスク</div>
+                <div class="summary-value">{{ overdue_task_count }}</div>
+                <div class="summary-sub">期限日が本日より前</div>
+            </div>
+        </a>
+
+        <a class="summary-link" href="{% url 'raid:list' %}">
+            <div class="summary-box">
+                <div class="summary-label">未解決RAID</div>
+                <div class="summary-value">{{ unresolved_raid_count }}</div>
+                <div class="summary-sub">OPEN / IN_PROGRESS / WATCH</div>
+            </div>
+        </a>
+
+        <a class="summary-link" href="{% url 'approvals:list' %}">
+            <div class="summary-box">
+                <div class="summary-label">承認待ち</div>
+                <div class="summary-value">{{ pending_approval_count }}</div>
+                <div class="summary-sub">REQUESTED</div>
+            </div>
+        </a>
+    </div>
+</div>
+
+<div class="dashboard-grid">
+    <div class="card detail-section">
+        <div class="page-header">
+            <h3>期限が近いタスク</h3>
+            <a class="button-secondary" href="{% url 'tasks:list' %}">タスク一覧へ</a>
+        </div>
+
+        {% if upcoming_tasks %}
+            <table>
+                <thead>
+                    <tr>
+                        <th>タスクID</th>
+                        <th>案件ID</th>
+                        <th>タスク名</th>
+                        <th>状態</th>
+                        <th>優先度</th>
+                        <th>期限</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for task in upcoming_tasks %}
+                        <tr>
+                            <td>{{ task.task_id }}</td>
+                            <td>{{ task.deal_id }}</td>
+                            <td>{{ task.title }}</td>
+                            <td>{{ task.status }}</td>
+                            <td>{{ task.priority }}</td>
+                            <td>{{ task.due_date }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <div class="empty">
+                未完了タスクはありません。
+            </div>
+        {% endif %}
+    </div>
+
+    <div class="card detail-section">
+        <div class="page-header">
+            <h3>最近登録された案件</h3>
+            <a class="button-secondary" href="{% url 'deals:list' %}">案件一覧へ</a>
+        </div>
+
+        {% if recent_deals %}
+            <table>
+                <thead>
+                    <tr>
+                        <th>案件ID</th>
+                        <th>案件名</th>
+                        <th>対象会社</th>
+                        <th>状態</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for deal in recent_deals %}
+                        <tr>
+                            <td>
+                                <a href="{% url 'deals:detail' deal.deal_id %}">
+                                    {{ deal.deal_id }}
+                                </a>
+                            </td>
+                            <td>{{ deal.deal_name }}</td>
+                            <td>{{ deal.target_company_name }}</td>
+                            <td>{{ deal.deal_status }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <div class="empty">
+                案件データがありません。
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<div class="card detail-section">
+    <div class="page-header">
+        <h3>最近の操作履歴</h3>
+        <a class="button-secondary" href="{% url 'audit:list' %}">操作履歴へ</a>
+    </div>
+
+    {% if recent_logs %}
+        <table>
+            <thead>
+                <tr>
+                    <th>日時</th>
+                    <th>案件ID</th>
+                    <th>対象</th>
+                    <th>対象ID</th>
+                    <th>操作</th>
+                    <th>変更後</th>
+                    <th>メモ</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for log in recent_logs %}
+                    <tr>
+                        <td>{{ log.acted_at }}</td>
+                        <td>{{ log.deal_id }}</td>
+                        <td>{{ log.object_type }}</td>
+                        <td>{{ log.object_id }}</td>
+                        <td>{{ log.action_type }}</td>
+                        <td>{{ log.after_value }}</td>
+                        <td>{{ log.note }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <div class="empty">
+            操作履歴はまだありません。
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

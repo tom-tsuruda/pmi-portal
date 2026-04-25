@@ -12,4 +12,5 @@ urlpatterns = [
     path("<str:deal_id>/status/", views.deal_update_status, name="update_status"),
     path("<str:deal_id>/archive/", views.deal_archive, name="archive"),
     path("<str:deal_id>/reactivate/", views.deal_reactivate, name="reactivate"),
+    path("<str:deal_id>/report/", views.deal_report, name="report"),
 ]

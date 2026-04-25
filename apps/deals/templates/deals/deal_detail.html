@@ -12,6 +12,7 @@
             </p>
         </div>
         <div>
+            <a class="button-secondary" href="{% url 'deals:report' deal.deal_id %}">レポート表示</a>
             <a class="button" href="{% url 'questionnaire:start' deal.deal_id %}">質問票からタスク生成</a>
             <a class="button-secondary" href="{% url 'deals:list' %}">案件一覧へ戻る</a>
         </div>

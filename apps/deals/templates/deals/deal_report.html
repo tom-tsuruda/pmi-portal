@@ -1,0 +1,356 @@
+{% extends "base.html" %}
+
+{% block title %}案件レポート | PMI Portal{% endblock %}
+
+{% block content %}
+<div class="card report-header">
+    <div class="page-header">
+        <div>
+            <h2>案件サマリーレポート</h2>
+            <p style="margin: 6px 0 0; color: #6b7280;">
+                {{ deal.deal_id }} / {{ deal.deal_name }} / {{ deal.target_company_name }}
+            </p>
+        </div>
+        <div class="no-print">
+            <button class="button" onclick="window.print()">印刷 / PDF保存</button>
+            <a class="button-secondary" href="{% url 'deals:detail' deal.deal_id %}">案件詳細へ戻る</a>
+        </div>
+    </div>
+
+    <div class="summary-grid">
+        <div class="summary-box">
+            <div class="summary-label">タスク進捗</div>
+            <div class="summary-value">{{ report_summary.task_progress }}%</div>
+            <div class="summary-sub">{{ report_summary.task_done }} / {{ report_summary.task_total }} 件完了</div>
+        </div>
+
+        <div class="summary-box">
+            <div class="summary-label">未完了タスク</div>
+            <div class="summary-value">{{ report_summary.incomplete_task_count }}</div>
+            <div class="summary-sub">DONE / CANCELLED 以外</div>
+        </div>
+
+        <div class="summary-box">
+            <div class="summary-label">期限超過</div>
+            <div class="summary-value">{{ report_summary.overdue_task_count }}</div>
+            <div class="summary-sub">期限日を超過</div>
+        </div>
+
+        <div class="summary-box">
+            <div class="summary-label">重要RAID</div>
+            <div class="summary-value">{{ report_summary.high_raid_count }}</div>
+            <div class="summary-sub">HIGH / CRITICAL</div>
+        </div>
+
+        <div class="summary-box">
+            <div class="summary-label">承認待ち</div>
+            <div class="summary-value">{{ report_summary.pending_approval_count }}</div>
+            <div class="summary-sub">REQUESTED</div>
+        </div>
+    </div>
+</div>
+
+<div class="card detail-section">
+    <h3>1. 案件基本情報</h3>
+
+    <table>
+        <tbody>
+            <tr>
+                <th>案件ID</th>
+                <td>{{ deal.deal_id }}</td>
+                <th>案件名</th>
+                <td>{{ deal.deal_name }}</td>
+            </tr>
+            <tr>
+                <th>対象会社</th>
+                <td>{{ deal.target_company_name }}</td>
+                <th>案件種別</th>
+                <td>{{ deal.deal_type }}</td>
+            </tr>
+            <tr>
+                <th>地域</th>
+                <td>{{ deal.region_main }}</td>
+                <th>業界</th>
+                <td>{{ deal.industry }}</td>
+            </tr>
+            <tr>
+                <th>ステータス</th>
+                <td>{{ deal.deal_status }}</td>
+                <th>担当者ID</th>
+                <td>{{ deal.owner_user_id }}</td>
+            </tr>
+            <tr>
+                <th>Day1日</th>
+                <td>{{ deal.day1_date }}</td>
+                <th>Day100日</th>
+                <td>{{ deal.day100_date }}</td>
+            </tr>
+            <tr>
+                <th>説明</th>
+                <td colspan="3">{{ deal.description }}</td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+
+<div class="card detail-section">
+    <h3>2. 期限超過タスク</h3>
+
+    {% if overdue_tasks %}
+        <table>
+            <thead>
+                <tr>
+                    <th>タスクID</th>
+                    <th>フェーズ</th>
+                    <th>WS</th>
+                    <th>タスク名</th>
+                    <th>優先度</th>
+                    <th>状態</th>
+                    <th>担当者</th>
+                    <th>期限</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for task in overdue_tasks %}
+                    <tr>
+                        <td>{{ task.task_id }}</td>
+                        <td>{{ task.phase_id }}</td>
+                        <td>{{ task.workstream_id }}</td>
+                        <td>{{ task.title }}</td>
+                        <td>{{ task.priority }}</td>
+                        <td>{{ task.status }}</td>
+                        <td>{{ task.owner_user_id }}</td>
+                        <td>{{ task.due_date }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <div class="empty">期限超過タスクはありません。</div>
+    {% endif %}
+</div>
+
+<div class="card detail-section">
+    <h3>3. 未完了タスク</h3>
+
+    {% if incomplete_tasks %}
+        <table>
+            <thead>
+                <tr>
+                    <th>タスクID</th>
+                    <th>フェーズ</th>
+                    <th>WS</th>
+                    <th>タスク名</th>
+                    <th>優先度</th>
+                    <th>状態</th>
+                    <th>担当者</th>
+                    <th>期限</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for task in incomplete_tasks %}
+                    <tr>
+                        <td>{{ task.task_id }}</td>
+                        <td>{{ task.phase_id }}</td>
+                        <td>{{ task.workstream_id }}</td>
+                        <td>{{ task.title }}</td>
+                        <td>{{ task.priority }}</td>
+                        <td>{{ task.status }}</td>
+                        <td>{{ task.owner_user_id }}</td>
+                        <td>{{ task.due_date }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <div class="empty">未完了タスクはありません。</div>
+    {% endif %}
+</div>
+
+<div class="card detail-section">
+    <h3>4. 重要RAID</h3>
+
+    {% if high_raid_items %}
+        <table>
+            <thead>
+                <tr>
+                    <th>RAID ID</th>
+                    <th>種別</th>
+                    <th>フェーズ</th>
+                    <th>WS</th>
+                    <th>タイトル</th>
+                    <th>スコア</th>
+                    <th>重要度</th>
+                    <th>状態</th>
+                    <th>期限</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in high_raid_items %}
+                    <tr>
+                        <td>{{ item.raid_id }}</td>
+                        <td>{{ item.raid_type }}</td>
+                        <td>{{ item.phase_id }}</td>
+                        <td>{{ item.workstream_id }}</td>
+                        <td>{{ item.title }}</td>
+                        <td>{{ item.score }}</td>
+                        <td>{{ item.escalation_level }}</td>
+                        <td>{{ item.status }}</td>
+                        <td>{{ item.due_date }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <div class="empty">重要RAIDはありません。</div>
+    {% endif %}
+</div>
+
+<div class="card detail-section">
+    <h3>5. 未解決RAID</h3>
+
+    {% if unresolved_raid_items %}
+        <table>
+            <thead>
+                <tr>
+                    <th>RAID ID</th>
+                    <th>種別</th>
+                    <th>フェーズ</th>
+                    <th>WS</th>
+                    <th>タイトル</th>
+                    <th>スコア</th>
+                    <th>重要度</th>
+                    <th>状態</th>
+                    <th>期限</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in unresolved_raid_items %}
+                    <tr>
+                        <td>{{ item.raid_id }}</td>
+                        <td>{{ item.raid_type }}</td>
+                        <td>{{ item.phase_id }}</td>
+                        <td>{{ item.workstream_id }}</td>
+                        <td>{{ item.title }}</td>
+                        <td>{{ item.score }}</td>
+                        <td>{{ item.escalation_level }}</td>
+                        <td>{{ item.status }}</td>
+                        <td>{{ item.due_date }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <div class="empty">未解決RAIDはありません。</div>
+    {% endif %}
+</div>
+
+<div class="card detail-section">
+    <h3>6. 意思決定</h3>
+
+    {% if decisions %}
+        <table>
+            <thead>
+                <tr>
+                    <th>意思決定ID</th>
+                    <th>フェーズ</th>
+                    <th>WS</th>
+                    <th>タイトル</th>
+                    <th>種別</th>
+                    <th>決定者</th>
+                    <th>決定日</th>
+                    <th>状態</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for decision in decisions %}
+                    <tr>
+                        <td>{{ decision.decision_id }}</td>
+                        <td>{{ decision.phase_id }}</td>
+                        <td>{{ decision.workstream_id }}</td>
+                        <td>{{ decision.title }}</td>
+                        <td>{{ decision.decision_type }}</td>
+                        <td>{{ decision.decided_by_user_id }}</td>
+                        <td>{{ decision.decided_on }}</td>
+                        <td>{{ decision.status }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <div class="empty">意思決定はありません。</div>
+    {% endif %}
+</div>
+
+<div class="card detail-section">
+    <h3>7. 承認待ち</h3>
+
+    {% if pending_approvals %}
+        <table>
+            <thead>
+                <tr>
+                    <th>承認ID</th>
+                    <th>対象種別</th>
+                    <th>対象ID</th>
+                    <th>ステップ</th>
+                    <th>依頼者</th>
+                    <th>承認者</th>
+                    <th>依頼日時</th>
+                    <th>状態</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for approval in pending_approvals %}
+                    <tr>
+                        <td>{{ approval.approval_id }}</td>
+                        <td>{{ approval.object_type }}</td>
+                        <td>{{ approval.object_id }}</td>
+                        <td>{{ approval.approval_step }}</td>
+                        <td>{{ approval.requester_user_id }}</td>
+                        <td>{{ approval.approver_user_id }}</td>
+                        <td>{{ approval.requested_at }}</td>
+                        <td>{{ approval.approval_status }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <div class="empty">承認待ちはありません。</div>
+    {% endif %}
+</div>
+
+<div class="card detail-section">
+    <h3>8. 資料一覧</h3>
+
+    {% if documents %}
+        <table>
+            <thead>
+                <tr>
+                    <th>資料ID</th>
+                    <th>フェーズ</th>
+                    <th>WS</th>
+                    <th>資料タイトル</th>
+                    <th>種別</th>
+                    <th>ファイル名</th>
+                    <th>状態</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for doc in documents %}
+                    <tr>
+                        <td>{{ doc.document_id }}</td>
+                        <td>{{ doc.phase_id }}</td>
+                        <td>{{ doc.workstream_id }}</td>
+                        <td>{{ doc.document_title }}</td>
+                        <td>{{ doc.document_type }}</td>
+                        <td>{{ doc.file_name }}</td>
+                        <td>{{ doc.status }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <div class="empty">資料はありません。</div>
+    {% endif %}
+</div>
+{% endblock %}
