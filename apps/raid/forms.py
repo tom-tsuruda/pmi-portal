@@ -1,6 +1,57 @@
 from django import forms
 
 
+PHASE_CHOICES = [
+    ("PRE_CLOSE", "PRE_CLOSE：クロージング前"),
+    ("DAY1", "DAY1：Day1対応"),
+    ("DAY30", "DAY30：30日以内"),
+    ("DAY100", "DAY100：100日計画"),
+    ("TSA", "TSA：TSA対応"),
+    ("POST100", "POST100：100日後"),
+]
+
+WORKSTREAM_CHOICES = [
+    ("PMO", "PMO：全体管理"),
+    ("HR", "HR：人事・労務"),
+    ("IT", "IT：IT・システム"),
+    ("FINANCE", "FINANCE：財務・会計"),
+    ("LEGAL", "LEGAL：法務・契約"),
+    ("SALES", "SALES：営業・顧客"),
+    ("OPS", "OPS：業務・オペレーション"),
+    ("COMMS", "COMMS：社内外コミュニケーション"),
+]
+
+RAID_TYPE_CHOICES = [
+    ("RISK", "RISK：リスク"),
+    ("ASSUMPTION", "ASSUMPTION：前提条件"),
+    ("ISSUE", "ISSUE：発生済み課題"),
+    ("DEPENDENCY", "DEPENDENCY：依存関係"),
+]
+
+RAID_STATUS_CHOICES = [
+    ("OPEN", "OPEN：未対応"),
+    ("IN_PROGRESS", "IN_PROGRESS：対応中"),
+    ("WATCH", "WATCH：監視中"),
+    ("CLOSED", "CLOSED：完了"),
+]
+
+PROBABILITY_CHOICES = [
+    (1, "1：低い"),
+    (2, "2：やや低い"),
+    (3, "3：中程度"),
+    (4, "4：高い"),
+    (5, "5：非常に高い"),
+]
+
+IMPACT_CHOICES = [
+    (1, "1：小さい"),
+    (2, "2：やや小さい"),
+    (3, "3：中程度"),
+    (4, "4：大きい"),
+    (5, "5：非常に大きい"),
+]
+
+
 class RaidCreateForm(forms.Form):
     deal_id = forms.ChoiceField(
         label="案件",
@@ -11,40 +62,19 @@ class RaidCreateForm(forms.Form):
     raid_type = forms.ChoiceField(
         label="RAID種別",
         required=True,
-        choices=[
-            ("RISK", "RISK：リスク"),
-            ("ASSUMPTION", "ASSUMPTION：前提条件"),
-            ("ISSUE", "ISSUE：発生済み課題"),
-            ("DEPENDENCY", "DEPENDENCY：依存関係"),
-        ],
+        choices=RAID_TYPE_CHOICES,
     )
 
     phase_id = forms.ChoiceField(
         label="フェーズ",
         required=True,
-        choices=[
-            ("PRE_CLOSE", "PRE_CLOSE：クロージング前"),
-            ("DAY1", "DAY1：Day1対応"),
-            ("DAY30", "DAY30：30日以内"),
-            ("DAY100", "DAY100：100日計画"),
-            ("TSA", "TSA：TSA対応"),
-            ("POST100", "POST100：100日後"),
-        ],
+        choices=PHASE_CHOICES,
     )
 
     workstream_id = forms.ChoiceField(
         label="ワークストリーム",
         required=True,
-        choices=[
-            ("PMO", "PMO：全体管理"),
-            ("HR", "HR：人事・労務"),
-            ("IT", "IT：IT・システム"),
-            ("FINANCE", "FINANCE：財務・会計"),
-            ("LEGAL", "LEGAL：法務・契約"),
-            ("SALES", "SALES：営業・顧客"),
-            ("OPS", "OPS：業務・オペレーション"),
-            ("COMMS", "COMMS：社内外コミュニケーション"),
-        ],
+        choices=WORKSTREAM_CHOICES,
     )
 
     title = forms.CharField(
@@ -68,26 +98,14 @@ class RaidCreateForm(forms.Form):
     probability = forms.ChoiceField(
         label="発生可能性",
         required=True,
-        choices=[
-            (1, "1：低い"),
-            (2, "2：やや低い"),
-            (3, "3：中程度"),
-            (4, "4：高い"),
-            (5, "5：非常に高い"),
-        ],
+        choices=PROBABILITY_CHOICES,
         initial=3,
     )
 
     impact = forms.ChoiceField(
         label="影響度",
         required=True,
-        choices=[
-            (1, "1：小さい"),
-            (2, "2：やや小さい"),
-            (3, "3：中程度"),
-            (4, "4：大きい"),
-            (5, "5：非常に大きい"),
-        ],
+        choices=IMPACT_CHOICES,
         initial=3,
     )
 
@@ -135,6 +153,15 @@ class RaidCreateForm(forms.Form):
         ]
 
 
+class RaidEditForm(RaidCreateForm):
+    status = forms.ChoiceField(
+        label="ステータス",
+        required=True,
+        choices=RAID_STATUS_CHOICES,
+        initial="OPEN",
+    )
+
+
 class RaidFilterForm(forms.Form):
     keyword = forms.CharField(
         label="キーワード",
@@ -155,39 +182,19 @@ class RaidFilterForm(forms.Form):
     raid_type = forms.ChoiceField(
         label="RAID種別",
         required=False,
-        choices=[
-            ("", "すべて"),
-            ("RISK", "RISK"),
-            ("ASSUMPTION", "ASSUMPTION"),
-            ("ISSUE", "ISSUE"),
-            ("DEPENDENCY", "DEPENDENCY"),
-        ],
+        choices=[("", "すべて")] + RAID_TYPE_CHOICES,
     )
 
     status = forms.ChoiceField(
         label="ステータス",
         required=False,
-        choices=[
-            ("", "すべて"),
-            ("OPEN", "OPEN"),
-            ("IN_PROGRESS", "IN_PROGRESS"),
-            ("WATCH", "WATCH"),
-            ("CLOSED", "CLOSED"),
-        ],
+        choices=[("", "すべて")] + RAID_STATUS_CHOICES,
     )
 
     phase_id = forms.ChoiceField(
         label="フェーズ",
         required=False,
-        choices=[
-            ("", "すべて"),
-            ("PRE_CLOSE", "PRE_CLOSE"),
-            ("DAY1", "DAY1"),
-            ("DAY30", "DAY30"),
-            ("DAY100", "DAY100"),
-            ("TSA", "TSA"),
-            ("POST100", "POST100"),
-        ],
+        choices=[("", "すべて")] + PHASE_CHOICES,
     )
 
     workstream_id = forms.ChoiceField(

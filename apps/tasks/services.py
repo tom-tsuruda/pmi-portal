@@ -1,3 +1,4 @@
+from apps.core.exceptions import RecordNotFoundError
 from apps.core.utils.datetime_utils import now_str
 from apps.core.utils.ids import next_id
 from apps.tasks.dtos import TaskCreateDTO
@@ -16,6 +17,17 @@ class TaskService:
 
     def filter_tasks(self, filters: dict) -> list[dict]:
         return self.task_repo.filter_tasks(filters)
+
+    def get_task(self, task_id: str) -> dict:
+        if not task_id:
+            raise RecordNotFoundError("tasks: task_id is empty")
+
+        task = self.task_repo.find_one_by_task_id(task_id)
+
+        if not task:
+            raise RecordNotFoundError(f"tasks: task_id={task_id} not found")
+
+        return task
 
     def create_task(self, dto: TaskCreateDTO) -> str:
         last_id = self.task_repo.get_last_task_id()
@@ -45,7 +57,6 @@ class TaskService:
 
             "approval_required_flag": 0,
 
-            # このアプリでは、すべてのタスクに証跡を求める前提にする。
             "evidence_required_flag": 1,
             "evidence_status": "REQUIRED",
 
@@ -84,6 +95,36 @@ class TaskService:
         task_id = self.create_task(dto)
         return True, task_id
 
+    def update_task(self, task_id: str, dto: TaskCreateDTO, status: str = "TODO", completion_note: str = "") -> None:
+        task = self.get_task(task_id)
+
+        updates = {
+            "deal_id": dto.deal_id,
+            "phase_id": dto.phase_id,
+            "workstream_id": dto.workstream_id,
+            "title": dto.title,
+            "description": dto.description,
+            "priority": dto.priority,
+            "status": status,
+            "owner_user_id": dto.owner_user_id,
+            "due_date": dto.due_date,
+            "template_source_id": dto.template_source_id,
+            "regulation_flag": dto.regulation_flag,
+            "why_this_task": dto.why_this_task or "PMIの進捗を管理するための基本タスクです。",
+            "beginner_guidance": dto.beginner_guidance or "まずは担当者・期限・完了条件を確認してください。",
+            "completion_note": completion_note,
+            "updated_at": now_str(),
+        }
+
+        previous_status = str(task.get("status") or "")
+
+        if status == "DONE" and previous_status != "DONE":
+            updates["completed_date"] = now_str()
+        elif status != "DONE":
+            updates["completed_date"] = ""
+
+        self.task_repo.update_row("task_id", task_id, updates)
+
     def update_status(self, task_id: str, status: str) -> None:
         updates = {
             "status": status,
@@ -92,6 +133,8 @@ class TaskService:
 
         if status == "DONE":
             updates["completed_date"] = now_str()
+        else:
+            updates["completed_date"] = ""
 
         self.task_repo.update_row(
             "task_id",
@@ -119,9 +162,3 @@ class TaskService:
             task_id,
             updates,
         )
-
-    def get_task(self, task_id: str) -> dict | None:
-        if not task_id:
-            return None
-
-        return self.task_repo.find_one_by_task_id(task_id)

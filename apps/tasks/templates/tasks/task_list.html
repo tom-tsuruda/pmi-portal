@@ -85,6 +85,7 @@
                     <th>期限</th>
                     <th>ステータス更新</th>
                     <th>証跡追加</th>
+                    <th>編集</th>
                 </tr>
             </thead>
 
@@ -170,6 +171,11 @@
                         <td>
                             <a class="button-secondary" href="{% url 'documents:upload' %}?deal_id={{ task.deal_id }}&task_id={{ task.task_id }}">
                                 証跡追加
+                            </a>
+                        </td>
+                        <td>
+                            <a class="button-secondary" href="{% url 'tasks:edit' task.task_id %}">
+                                編集
                             </a>
                         </td>
                     </tr>

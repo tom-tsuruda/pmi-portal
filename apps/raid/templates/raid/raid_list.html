@@ -85,6 +85,8 @@
                     <th>期限</th>
                     <th>状態</th>
                     <th>更新</th>
+                    <th class="no-print">編集</th>
+
                 </tr>
             </thead>
             <tbody>
@@ -114,6 +116,11 @@
                                 </select>
                                 <button class="button" type="submit">更新</button>
                             </form>
+                        </td>
+                        <td class="no-print">
+                            <a class="button-secondary" href="{% url 'raid:edit' item.raid_id %}">
+                                編集
+                            </a>
                         </td>
                     </tr>
                 {% endfor %}

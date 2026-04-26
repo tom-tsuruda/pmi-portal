@@ -1,6 +1,41 @@
 from django import forms
 
 
+PHASE_CHOICES = [
+    ("PRE_CLOSE", "PRE_CLOSE：クロージング前"),
+    ("DAY1", "DAY1：Day1対応"),
+    ("DAY30", "DAY30：30日以内"),
+    ("DAY100", "DAY100：100日計画"),
+    ("TSA", "TSA：TSA対応"),
+    ("POST100", "POST100：100日後"),
+]
+
+WORKSTREAM_CHOICES = [
+    ("PMO", "PMO：全体管理"),
+    ("HR", "HR：人事・労務"),
+    ("IT", "IT：IT・システム"),
+    ("FINANCE", "FINANCE：財務・会計"),
+    ("LEGAL", "LEGAL：法務・契約"),
+    ("SALES", "SALES：営業・顧客"),
+    ("OPS", "OPS：業務・オペレーション"),
+    ("COMMS", "COMMS：社内外コミュニケーション"),
+]
+
+PRIORITY_CHOICES = [
+    ("HIGH", "HIGH：高"),
+    ("MEDIUM", "MEDIUM：中"),
+    ("LOW", "LOW：低"),
+]
+
+TASK_STATUS_CHOICES = [
+    ("TODO", "TODO：未着手"),
+    ("IN_PROGRESS", "IN_PROGRESS：対応中"),
+    ("DONE", "DONE：完了"),
+    ("BLOCKED", "BLOCKED：停止中"),
+    ("CANCELLED", "CANCELLED：中止"),
+]
+
+
 class TaskCreateForm(forms.Form):
     deal_id = forms.ChoiceField(
         label="案件",
@@ -11,29 +46,13 @@ class TaskCreateForm(forms.Form):
     phase_id = forms.ChoiceField(
         label="フェーズ",
         required=True,
-        choices=[
-            ("PRE_CLOSE", "PRE_CLOSE：クロージング前"),
-            ("DAY1", "DAY1：Day1対応"),
-            ("DAY30", "DAY30：30日以内"),
-            ("DAY100", "DAY100：100日計画"),
-            ("TSA", "TSA：TSA対応"),
-            ("POST100", "POST100：100日後"),
-        ],
+        choices=PHASE_CHOICES,
     )
 
     workstream_id = forms.ChoiceField(
         label="ワークストリーム",
         required=True,
-        choices=[
-            ("PMO", "PMO：全体管理"),
-            ("HR", "HR：人事・労務"),
-            ("IT", "IT：IT・システム"),
-            ("FINANCE", "FINANCE：財務・会計"),
-            ("LEGAL", "LEGAL：法務・契約"),
-            ("SALES", "SALES：営業・顧客"),
-            ("OPS", "OPS：業務・オペレーション"),
-            ("COMMS", "COMMS：社内外コミュニケーション"),
-        ],
+        choices=WORKSTREAM_CHOICES,
     )
 
     title = forms.CharField(
@@ -57,11 +76,7 @@ class TaskCreateForm(forms.Form):
     priority = forms.ChoiceField(
         label="優先度",
         required=True,
-        choices=[
-            ("HIGH", "HIGH：高"),
-            ("MEDIUM", "MEDIUM：中"),
-            ("LOW", "LOW：低"),
-        ],
+        choices=PRIORITY_CHOICES,
         initial="MEDIUM",
     )
 
@@ -79,12 +94,66 @@ class TaskCreateForm(forms.Form):
         widget=forms.TextInput(attrs={"placeholder": "例：2026-04-30"}),
     )
 
+    template_source_id = forms.CharField(
+        label="テンプレート元ID",
+        max_length=100,
+        required=False,
+        widget=forms.TextInput(attrs={"placeholder": "例：TPL-000001"}),
+    )
+
+    regulation_flag = forms.BooleanField(
+        label="規制対応タスク",
+        required=False,
+    )
+
+    why_this_task = forms.CharField(
+        label="このタスクが必要な理由",
+        required=False,
+        widget=forms.Textarea(
+            attrs={
+                "rows": 3,
+                "placeholder": "なぜこのタスクが必要かを入力してください。",
+            }
+        ),
+    )
+
+    beginner_guidance = forms.CharField(
+        label="初心者向け説明",
+        required=False,
+        widget=forms.Textarea(
+            attrs={
+                "rows": 3,
+                "placeholder": "PMI経験が少ない人向けに、確認ポイントを簡単に記載します。",
+            }
+        ),
+    )
+
     def __init__(self, *args, deal_choices=None, **kwargs):
         super().__init__(*args, **kwargs)
 
         self.fields["deal_id"].choices = deal_choices or [
             ("", "案件がありません。先に案件を登録してください。")
         ]
+
+
+class TaskEditForm(TaskCreateForm):
+    status = forms.ChoiceField(
+        label="ステータス",
+        required=True,
+        choices=TASK_STATUS_CHOICES,
+        initial="TODO",
+    )
+
+    completion_note = forms.CharField(
+        label="完了・更新メモ",
+        required=False,
+        widget=forms.Textarea(
+            attrs={
+                "rows": 3,
+                "placeholder": "完了理由、更新内容、次の対応などを入力してください。",
+            }
+        ),
+    )
 
 
 class TaskFilterForm(forms.Form):
@@ -107,39 +176,19 @@ class TaskFilterForm(forms.Form):
     status = forms.ChoiceField(
         label="ステータス",
         required=False,
-        choices=[
-            ("", "すべて"),
-            ("TODO", "TODO"),
-            ("IN_PROGRESS", "IN_PROGRESS"),
-            ("DONE", "DONE"),
-            ("BLOCKED", "BLOCKED"),
-            ("CANCELLED", "CANCELLED"),
-        ],
+        choices=[("", "すべて")] + TASK_STATUS_CHOICES,
     )
 
     priority = forms.ChoiceField(
         label="優先度",
         required=False,
-        choices=[
-            ("", "すべて"),
-            ("HIGH", "HIGH"),
-            ("MEDIUM", "MEDIUM"),
-            ("LOW", "LOW"),
-        ],
+        choices=[("", "すべて")] + PRIORITY_CHOICES,
     )
 
     phase_id = forms.ChoiceField(
         label="フェーズ",
         required=False,
-        choices=[
-            ("", "すべて"),
-            ("PRE_CLOSE", "PRE_CLOSE"),
-            ("DAY1", "DAY1"),
-            ("DAY30", "DAY30"),
-            ("DAY100", "DAY100"),
-            ("TSA", "TSA"),
-            ("POST100", "POST100"),
-        ],
+        choices=[("", "すべて")] + PHASE_CHOICES,
     )
 
     workstream_id = forms.ChoiceField(

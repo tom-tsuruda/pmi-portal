@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+
+{% block title %}RAID編集 | PMI Portal{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="page-header">
+        <div>
+            <h2>RAID編集</h2>
+            <p style="margin: 6px 0 0; color: #6b7280;">
+                {{ raid_id }} / {{ item.title|default:"-" }}
+            </p>
+        </div>
+
+        {% if deal_id %}
+            <a class="button-secondary" href="{% url 'deals:detail' deal_id %}">案件詳細へ戻る</a>
+        {% else %}
+            <a class="button-secondary" href="{% url 'raid:list' %}">一覧へ戻る</a>
+        {% endif %}
+    </div>
+
+    <div style="background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 10px; padding: 14px; margin-bottom: 18px;">
+        <strong>RAID更新のポイント：</strong>
+        <span style="color: #4b5563;">
+            発生可能性と影響度を変更すると、スコアと重要度が自動で再計算されます。
+            CLOSEDにすると、クローズ日が自動で入ります。
+        </span>
+    </div>
+
+    <form method="post">
+        {% csrf_token %}
+
+        {{ form.as_p }}
+
+        <div class="form-actions">
+            <button class="button" type="submit">更新する</button>
+
+            {% if deal_id %}
+                <a class="button-secondary" href="{% url 'deals:detail' deal_id %}">キャンセル</a>
+            {% else %}
+                <a class="button-secondary" href="{% url 'raid:list' %}">キャンセル</a>
+            {% endif %}
+        </div>
+    </form>
+</div>
+{% endblock %}

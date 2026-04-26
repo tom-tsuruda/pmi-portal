@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+
+{% block title %}タスク編集 | PMI Portal{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="page-header">
+        <div>
+            <h2>タスク編集</h2>
+            <p style="margin: 6px 0 0; color: #6b7280;">
+                {{ task_id }} / {{ task.title|default:"-" }}
+            </p>
+        </div>
+
+        {% if deal_id %}
+            <a class="button-secondary" href="{% url 'deals:detail' deal_id %}">案件詳細へ戻る</a>
+        {% else %}
+            <a class="button-secondary" href="{% url 'tasks:list' %}">一覧へ戻る</a>
+        {% endif %}
+    </div>
+
+    <div style="background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 10px; padding: 14px; margin-bottom: 18px;">
+        <strong>タスク更新のポイント：</strong>
+        <span style="color: #4b5563;">
+            担当者、期限、優先度、ステータス、完了メモを更新します。
+            DONEにする場合は、証跡が添付されているかも確認してください。
+        </span>
+    </div>
+
+    <form method="post">
+        {% csrf_token %}
+
+        {{ form.as_p }}
+
+        <div class="form-actions">
+            <button class="button" type="submit">更新する</button>
+
+            {% if deal_id %}
+                <a class="button-secondary" href="{% url 'deals:detail' deal_id %}">キャンセル</a>
+            {% else %}
+                <a class="button-secondary" href="{% url 'tasks:list' %}">キャンセル</a>
+            {% endif %}
+        </div>
+    </form>
+</div>
+{% endblock %}

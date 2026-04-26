@@ -21,6 +21,15 @@ class ExcelRaidRepository(BaseExcelRepository):
     def find_by_deal(self, deal_id: str) -> list[dict]:
         return self.find_by("deal_id", deal_id)
 
+    def find_one_by_raid_id(self, raid_id: str) -> dict | None:
+        rows = self.find_all()
+
+        for row in rows:
+            if str(row.get("raid_id") or "") == str(raid_id):
+                return row
+
+        return None
+
     def filter_items(self, filters: dict) -> list[dict]:
         rows = self.find_all()
 
@@ -33,8 +42,6 @@ class ExcelRaidRepository(BaseExcelRepository):
         escalation_level = str(filters.get("escalation_level") or "").strip()
         owner_user_id = str(filters.get("owner_user_id") or "").strip()
 
-        # チェックなし=False → CLOSEDは非表示
-        # チェックあり=True → CLOSEDも表示
         show_closed = bool(filters.get("show_closed"))
 
         results = []
