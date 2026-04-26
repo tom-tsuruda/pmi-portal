@@ -21,35 +21,53 @@
         <h3 style="margin-top: 0;">この質問票の目的</h3>
         <p style="color: #4b5563; line-height: 1.8; margin-bottom: 0;">
             この質問票に回答すると、PMIで必要になりやすい初期タスクを自動生成します。
-            たとえば、TSA、個人情報、海外拠点、規制業種、IT統合、従業員説明などの有無に応じて、
-            Day1・Day100に必要なタスクを追加します。
+            「はい」の場合は実行タスクを作成し、「不明」の場合は確認タスクを作成する設計にしていきます。
+            PMI経験が少ない場合でも、質問に答えることで確認漏れを減らすことを目的にしています。
         </p>
     </div>
 
     <form method="post">
         {% csrf_token %}
 
-        {% for field in form %}
-            <div style="background: white; border: 1px solid #e5e7eb; border-radius: 12px; padding: 16px; margin-bottom: 14px;">
-                <label for="{{ field.id_for_label }}" style="font-weight: 700;">
-                    {{ forloop.counter }}. {{ field.label }}
-                </label>
+        {% for group in question_groups %}
+            <div class="card detail-section" style="margin-bottom: 18px;">
+                <h3 style="margin-top: 0;">{{ group.category }}</h3>
 
-                <div style="margin-top: 8px;">
-                    {{ field }}
-                </div>
+                {% for question in group.questions %}
+                    {% with field_name="question_"|add:question.question_id %}
+                        {% for field in form %}
+                            {% if field.name == field_name %}
+                                <div style="background: white; border: 1px solid #e5e7eb; border-radius: 12px; padding: 14px; margin-bottom: 12px;">
+                                    <label for="{{ field.id_for_label }}" style="font-weight: 700;">
+                                        {{ question.display_order|default:forloop.counter }}. {{ field.label }}
+                                    </label>
 
-                {% if field.help_text %}
-                    <div style="color: #6b7280; font-size: 13px; line-height: 1.6; margin-top: 8px;">
-                        {{ field.help_text }}
-                    </div>
-                {% endif %}
+                                    <div style="margin-top: 8px;">
+                                        {{ field }}
+                                    </div>
 
-                {% if field.errors %}
-                    <div style="color: #dc2626; margin-top: 8px;">
-                        {{ field.errors }}
-                    </div>
-                {% endif %}
+                                    {% if field.help_text %}
+                                        <div style="color: #6b7280; font-size: 13px; line-height: 1.6; margin-top: 8px;">
+                                            {{ field.help_text }}
+                                        </div>
+                                    {% endif %}
+
+                                    {% if question.beginner_guidance %}
+                                        <div style="color: #2563eb; font-size: 13px; line-height: 1.6; margin-top: 8px;">
+                                            {{ question.beginner_guidance }}
+                                        </div>
+                                    {% endif %}
+
+                                    {% if field.errors %}
+                                        <div style="color: #dc2626; margin-top: 8px;">
+                                            {{ field.errors }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            {% endif %}
+                        {% endfor %}
+                    {% endwith %}
+                {% endfor %}
             </div>
         {% endfor %}
 

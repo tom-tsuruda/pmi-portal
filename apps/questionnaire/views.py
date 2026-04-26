@@ -9,12 +9,40 @@ from apps.questionnaire.services import QuestionnaireService
 questionnaire_service = QuestionnaireService()
 
 
+def _build_question_groups(questions: list[dict]) -> list[dict]:
+    """
+    質問を category ごとにまとめる。
+    Excelに category がない場合は「共通」にまとめる。
+    """
+    groups = []
+    index_by_category = {}
+
+    for question in questions:
+        category = question.get("category") or question.get("question_category") or "共通"
+        category = str(category).strip() or "共通"
+
+        if category not in index_by_category:
+            index_by_category[category] = len(groups)
+            groups.append(
+                {
+                    "category": category,
+                    "questions": [],
+                }
+            )
+
+        groups[index_by_category[category]]["questions"].append(question)
+
+    return groups
+
+
 def questionnaire_start(request, deal_id: str):
     try:
         questions = questionnaire_service.list_questions()
     except RepositoryError as e:
         messages.error(request, str(e))
         return redirect("deals:detail", deal_id=deal_id)
+
+    question_groups = _build_question_groups(questions)
 
     if request.method == "POST":
         form = QuestionnaireAnswerForm(request.POST, questions=questions)
@@ -54,5 +82,6 @@ def questionnaire_start(request, deal_id: str):
             "form": form,
             "deal_id": deal_id,
             "questions": questions,
+            "question_groups": question_groups,
         },
     )
