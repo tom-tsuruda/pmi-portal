@@ -86,6 +86,7 @@
                     <th>測定日</th>
                     <th>担当</th>
                     <th>状態</th>
+                    <th class="no-print">編集</th>
                 </tr>
             </thead>
             <tbody>
@@ -129,6 +130,11 @@
                             {% else %}
                                 {{ item.status_color|default:"-" }}
                             {% endif %}
+                        </td>
+                        <td class="no-print">
+                            <a class="button-secondary" href="{% url 'kpis:edit' item.kpi_id %}">
+                                編集
+                            </a>
                         </td>
                     </tr>
                 {% endfor %}

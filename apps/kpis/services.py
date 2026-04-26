@@ -1,3 +1,4 @@
+from apps.core.exceptions import RecordNotFoundError
 from apps.core.utils.datetime_utils import now_str
 from apps.core.utils.ids import next_id
 from apps.kpis.dtos import KpiCreateDTO
@@ -16,6 +17,14 @@ class KpiService:
 
     def filter_kpis(self, filters: dict) -> list[dict]:
         return self.kpi_repo.filter_kpis(filters)
+
+    def get_kpi(self, kpi_id: str) -> dict:
+        kpi = self.kpi_repo.find_one_by_kpi_id(kpi_id)
+
+        if not kpi:
+            raise RecordNotFoundError(f"kpis: kpi_id={kpi_id} not found")
+
+        return kpi
 
     def create_kpi(self, dto: KpiCreateDTO) -> str:
         last_id = self.kpi_repo.get_last_kpi_id()
@@ -56,6 +65,40 @@ class KpiService:
 
         self.kpi_repo.append_row(record)
         return kpi_id
+
+    def update_kpi(self, kpi_id: str, dto: KpiCreateDTO) -> None:
+        self.get_kpi(kpi_id)
+
+        updates = {
+            "deal_id": dto.deal_id,
+            "workstream_id": dto.workstream_id,
+            "phase_id": dto.phase_id,
+            "kpi_name": dto.kpi_name,
+            "kpi_category": dto.kpi_category,
+            "definition": dto.definition,
+            "unit": dto.unit,
+
+            "baseline_value": dto.baseline_value,
+            "target_value": dto.target_value,
+            "actual_value": dto.actual_value,
+
+            "measurement_frequency": dto.measurement_frequency,
+            "measurement_date": dto.measurement_date,
+            "owner_user_id": dto.owner_user_id,
+
+            "threshold_red": dto.threshold_red,
+            "threshold_yellow": dto.threshold_yellow,
+            "threshold_green": dto.threshold_green,
+            "status_color": dto.status_color,
+
+            "note": dto.note,
+            "beginner_guidance": dto.beginner_guidance
+            or "このKPIは、PMIの進捗・効果・リスク状態を定量的に確認するための指標です。",
+
+            "updated_at": now_str(),
+        }
+
+        self.kpi_repo.update_row("kpi_id", kpi_id, updates)
 
     def build_summary(self, deal_id: str) -> dict:
         kpis = self.list_kpis(deal_id=deal_id)

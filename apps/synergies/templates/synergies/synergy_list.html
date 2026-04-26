@@ -80,6 +80,7 @@
                     <th>担当</th>
                     <th>状態</th>
                     <th>遅延</th>
+                    <th class="no-print">編集</th>
                 </tr>
             </thead>
             <tbody>
@@ -118,6 +119,11 @@
                             {% else %}
                                 -
                             {% endif %}
+                        </td>
+                        <td class="no-print">
+                            <a class="button-secondary" href="{% url 'synergies:edit' item.synergy_id %}">
+                                編集
+                            </a>
                         </td>
                     </tr>
                 {% endfor %}

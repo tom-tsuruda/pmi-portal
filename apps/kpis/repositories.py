@@ -21,6 +21,15 @@ class ExcelKpiRepository(BaseExcelRepository):
     def find_by_deal(self, deal_id: str) -> list[dict]:
         return self.find_by("deal_id", deal_id)
 
+    def find_one_by_kpi_id(self, kpi_id: str) -> dict | None:
+        rows = self.find_all()
+
+        for row in rows:
+            if str(row.get("kpi_id") or "") == str(kpi_id):
+                return row
+
+        return None
+
     def filter_kpis(self, filters: dict) -> list[dict]:
         rows = self.find_all()
 

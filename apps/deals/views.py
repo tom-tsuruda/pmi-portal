@@ -163,7 +163,7 @@ def deal_detail(request, deal_id: str):
     evidence_summary = _build_evidence_summary(tasks)
     synergy_summary = synergy_service.build_summary(deal_id)
     kpi_summary = kpi_service.build_summary(deal_id)
-    
+
     open_raid_count = len(
         [
             item
@@ -203,7 +203,7 @@ def deal_detail(request, deal_id: str):
             "phase_summary": phase_summary,
             "workstream_summary": workstream_summary,
             "evidence_summary": evidence_summary,
-            "synergy_summary": synergy_summary,
+            "evidence_summary": evidence_summary,
             "synergy_summary": synergy_summary,
             "kpi_summary": kpi_summary,
         },
@@ -265,6 +265,8 @@ def deal_report(request, deal_id: str):
         documents = document_service.list_documents(deal_id=deal_id)
         decisions = decision_service.list_decisions(deal_id=deal_id)
         approvals = approval_service.list_approvals(deal_id=deal_id)
+        synergies = synergy_service.list_synergies(deal_id=deal_id)
+        kpis = kpi_service.list_kpis(deal_id=deal_id)
 
     except RecordNotFoundError:
         messages.error(request, f"案件が見つかりません: {deal_id}")
@@ -323,6 +325,38 @@ def deal_report(request, deal_id: str):
     synergy_summary = synergy_service.build_summary(deal_id)
     kpi_summary = kpi_service.build_summary(deal_id)
 
+    slippage_synergies = [
+        item for item in synergies
+        if str(item.get("slippage_flag") or "0") == "1"
+    ]
+
+    at_risk_synergies = [
+        item for item in synergies
+        if str(item.get("status") or "") == "AT_RISK"
+    ]
+
+    red_kpis = [
+        item for item in kpis
+        if str(item.get("status_color") or "").upper() == "RED"
+    ]
+
+    yellow_kpis = [
+        item for item in kpis
+        if str(item.get("status_color") or "").upper() == "YELLOW"
+    ]
+
+    attention_kpis = red_kpis + yellow_kpis
+
+    if red_kpis or high_raid_items or slippage_synergies:
+        overall_status = "RED"
+        overall_comment = "重要なリスクまたは遅延があり、経営判断・追加対応が必要です。"
+    elif yellow_kpis or overdue_tasks or pending_approvals or at_risk_synergies:
+        overall_status = "YELLOW"
+        overall_comment = "一部に注意事項があります。次回までの対応状況を確認してください。"
+    else:
+        overall_status = "GREEN"
+        overall_comment = "重大な未解決事項は限定的で、概ね計画どおりに進んでいます。"
+
     report_summary = {
         "task_total": task_total,
         "task_done": task_done,
@@ -336,6 +370,15 @@ def deal_report(request, deal_id: str):
         "decided_decision_count": len(decided_decisions),
         "pending_approval_count": len(pending_approvals),
         "document_count": len(documents),
+        "synergy_count": len(synergies),
+        "slippage_synergy_count": len(slippage_synergies),
+        "at_risk_synergy_count": len(at_risk_synergies),
+        "kpi_count": len(kpis),
+        "red_kpi_count": len(red_kpis),
+        "yellow_kpi_count": len(yellow_kpis),
+        "attention_kpi_count": len(attention_kpis),
+        "overall_status": overall_status,
+        "overall_comment": overall_comment,
     }
 
     return render(
@@ -354,12 +397,18 @@ def deal_report(request, deal_id: str):
             "decisions": decisions,
             "approvals": approvals,
             "pending_approvals": pending_approvals,
+            "synergies": synergies,
+            "slippage_synergies": slippage_synergies,
+            "at_risk_synergies": at_risk_synergies,
+            "kpis": kpis,
+            "red_kpis": red_kpis,
+            "yellow_kpis": yellow_kpis,
+            "attention_kpis": attention_kpis,
             "report_summary": report_summary,
             "synergy_summary": synergy_summary,
             "kpi_summary": kpi_summary,
         },
     )
-
 
 def _build_task_group_summary(
     tasks: list[dict],

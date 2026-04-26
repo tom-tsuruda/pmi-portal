@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+
+{% block title %}Synergy編集 | PMI Portal{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="page-header">
+        <div>
+            <h2>Synergy編集</h2>
+            <p style="margin: 6px 0 0; color: #6b7280;">
+                {{ synergy_id }} / {{ synergy.initiative_name|default:"-" }}
+            </p>
+        </div>
+
+        {% if deal_id %}
+            <a class="button-secondary" href="{% url 'deals:detail' deal_id %}">案件詳細へ戻る</a>
+        {% else %}
+            <a class="button-secondary" href="{% url 'synergies:list' %}">一覧へ戻る</a>
+        {% endif %}
+    </div>
+
+    <div style="background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 10px; padding: 14px; margin-bottom: 18px;">
+        <strong>Synergy更新のポイント：</strong>
+        <span style="color: #4b5563;">
+            実績額、Run-rate効果額、確度、ステータス、遅延有無を定期的に更新してください。
+            遅延やAT_RISKの場合は、メモに理由と対応策を残すとSteerCoレポートで使いやすくなります。
+        </span>
+    </div>
+
+    <form method="post">
+        {% csrf_token %}
+
+        {{ form.as_p }}
+
+        <div class="form-actions">
+            <button class="button" type="submit">更新する</button>
+
+            {% if deal_id %}
+                <a class="button-secondary" href="{% url 'deals:detail' deal_id %}">キャンセル</a>
+            {% else %}
+                <a class="button-secondary" href="{% url 'synergies:list' %}">キャンセル</a>
+            {% endif %}
+        </div>
+    </form>
+</div>
+{% endblock %}

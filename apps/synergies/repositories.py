@@ -21,6 +21,15 @@ class ExcelSynergyRepository(BaseExcelRepository):
     def find_by_deal(self, deal_id: str) -> list[dict]:
         return self.find_by("deal_id", deal_id)
 
+    def find_one_by_synergy_id(self, synergy_id: str) -> dict | None:
+        rows = self.find_all()
+
+        for row in rows:
+            if str(row.get("synergy_id") or "") == str(synergy_id):
+                return row
+
+        return None
+
     def filter_synergies(self, filters: dict) -> list[dict]:
         rows = self.find_all()
 

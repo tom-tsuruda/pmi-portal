@@ -1,20 +1,37 @@
 {% extends "base.html" %}
 
-{% block title %}案件レポート | PMI Portal{% endblock %}
+{% block title %}SteerCoレポート | PMI Portal{% endblock %}
 
 {% block content %}
 <div class="card report-header">
     <div class="page-header">
         <div>
-            <h2>案件サマリーレポート</h2>
+            <h2>SteerCo 1ページレポート</h2>
             <p style="margin: 6px 0 0; color: #6b7280;">
-                {{ deal.deal_id }} / {{ deal.deal_name }} / {{ deal.target_company_name }}
+                {{ deal.deal_id|default:"-" }} / {{ deal.deal_name|default:"-" }} / {{ deal.target_company_name|default:"-" }}
             </p>
         </div>
-        <div class="no-print">
+
+        <div class="no-print" style="display: flex; gap: 8px; flex-wrap: wrap;">
             <button class="button" onclick="window.print()">印刷 / PDF保存</button>
             <a class="button-secondary" href="{% url 'deals:detail' deal.deal_id %}">案件詳細へ戻る</a>
         </div>
+    </div>
+
+    <div style="background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 10px; padding: 14px; margin-bottom: 18px;">
+        <strong>総合状況：</strong>
+
+        {% if report_summary.overall_status == "GREEN" %}
+            <span style="color: #166534; font-weight: 700;">GREEN</span>
+        {% elif report_summary.overall_status == "YELLOW" %}
+            <span style="color: #ca8a04; font-weight: 700;">YELLOW</span>
+        {% else %}
+            <span style="color: #dc2626; font-weight: 700;">RED</span>
+        {% endif %}
+
+        <span style="margin-left: 8px; color: #4b5563;">
+            {{ report_summary.overall_comment }}
+        </span>
     </div>
 
     <div class="summary-grid">
@@ -25,15 +42,15 @@
         </div>
 
         <div class="summary-box">
-            <div class="summary-label">未完了タスク</div>
-            <div class="summary-value">{{ report_summary.incomplete_task_count }}</div>
-            <div class="summary-sub">DONE / CANCELLED 以外</div>
-        </div>
-
-        <div class="summary-box">
             <div class="summary-label">期限超過</div>
             <div class="summary-value">{{ report_summary.overdue_task_count }}</div>
             <div class="summary-sub">期限日を超過</div>
+        </div>
+
+        <div class="summary-box">
+            <div class="summary-label">証跡未添付</div>
+            <div class="summary-value">{{ report_summary.missing_evidence_count }}</div>
+            <div class="summary-sub">全タスク証跡対象</div>
         </div>
 
         <div class="summary-box">
@@ -47,6 +64,28 @@
             <div class="summary-value">{{ report_summary.pending_approval_count }}</div>
             <div class="summary-sub">REQUESTED</div>
         </div>
+
+        <div class="summary-box">
+            <div class="summary-label">Synergy達成率</div>
+            <div class="summary-value">{{ synergy_summary.achievement_rate }}%</div>
+            <div class="summary-sub">
+                実績 {{ synergy_summary.actual_amount }} / 目標 {{ synergy_summary.target_amount }}
+            </div>
+        </div>
+
+        <div class="summary-box">
+            <div class="summary-label">KPI注意</div>
+            <div class="summary-value">{{ kpi_summary.attention_count }}</div>
+            <div class="summary-sub">
+                RED {{ kpi_summary.red_count }} / YELLOW {{ kpi_summary.yellow_count }}
+            </div>
+        </div>
+
+        <div class="summary-box">
+            <div class="summary-label">意思決定</div>
+            <div class="summary-value">{{ report_summary.decision_count }}</div>
+            <div class="summary-sub">DECIDED {{ report_summary.decided_decision_count }}</div>
+        </div>
     </div>
 </div>
 
@@ -57,44 +96,299 @@
         <tbody>
             <tr>
                 <th>案件ID</th>
-                <td>{{ deal.deal_id }}</td>
+                <td>{{ deal.deal_id|default:"-" }}</td>
                 <th>案件名</th>
-                <td>{{ deal.deal_name }}</td>
+                <td>{{ deal.deal_name|default:"-" }}</td>
             </tr>
             <tr>
                 <th>対象会社</th>
-                <td>{{ deal.target_company_name }}</td>
+                <td>{{ deal.target_company_name|default:"-" }}</td>
                 <th>案件種別</th>
-                <td>{{ deal.deal_type }}</td>
+                <td>{{ deal.deal_type|default:"-" }}</td>
             </tr>
             <tr>
                 <th>地域</th>
-                <td>{{ deal.region_main }}</td>
+                <td>{{ deal.region_main|default:"-" }}</td>
                 <th>業界</th>
-                <td>{{ deal.industry }}</td>
+                <td>{{ deal.industry|default:"-" }}</td>
             </tr>
             <tr>
                 <th>ステータス</th>
-                <td>{{ deal.deal_status }}</td>
+                <td>{{ deal.deal_status|default:"-" }}</td>
                 <th>担当者ID</th>
-                <td>{{ deal.owner_user_id }}</td>
+                <td>{{ deal.owner_user_id|default:"-" }}</td>
             </tr>
             <tr>
                 <th>Day1日</th>
-                <td>{{ deal.day1_date }}</td>
+                <td>{{ deal.day1_date|default:"-" }}</td>
                 <th>Day100日</th>
-                <td>{{ deal.day100_date }}</td>
+                <td>{{ deal.day100_date|default:"-" }}</td>
             </tr>
             <tr>
                 <th>説明</th>
-                <td colspan="3">{{ deal.description }}</td>
+                <td colspan="3">{{ deal.description|default:"-" }}</td>
             </tr>
         </tbody>
     </table>
 </div>
 
 <div class="card detail-section">
-    <h3>2. 期限超過タスク</h3>
+    <h3>2. SteerCo重点確認事項</h3>
+
+    <table>
+        <thead>
+            <tr>
+                <th>分類</th>
+                <th>件数</th>
+                <th>確認ポイント</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>期限超過タスク</td>
+                <td>{{ report_summary.overdue_task_count }}</td>
+                <td>Day1 / Day30 / Day100 に影響するタスクがないか確認してください。</td>
+            </tr>
+            <tr>
+                <td>証跡未添付</td>
+                <td>{{ report_summary.missing_evidence_count }}</td>
+                <td>完了報告に耐えられる証跡が残っているか確認してください。</td>
+            </tr>
+            <tr>
+                <td>重要RAID</td>
+                <td>{{ report_summary.high_raid_count }}</td>
+                <td>経営判断・追加支援・エスカレーションが必要か確認してください。</td>
+            </tr>
+            <tr>
+                <td>承認待ち</td>
+                <td>{{ report_summary.pending_approval_count }}</td>
+                <td>承認遅れがPMI進捗を止めていないか確認してください。</td>
+            </tr>
+            <tr>
+                <td>遅延Synergy</td>
+                <td>{{ report_summary.slippage_synergy_count }}</td>
+                <td>統合効果の実現時期・金額への影響を確認してください。</td>
+            </tr>
+            <tr>
+                <td>注意KPI</td>
+                <td>{{ report_summary.attention_kpi_count }}</td>
+                <td>RED / YELLOW のKPIについて、原因と対応策を確認してください。</td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+
+<div class="card detail-section">
+    <h3>3. Synergyサマリー</h3>
+
+    <table>
+        <tbody>
+            <tr>
+                <th>施策数</th>
+                <td>{{ synergy_summary.count }}</td>
+                <th>達成済</th>
+                <td>{{ synergy_summary.achieved_count }}</td>
+            </tr>
+            <tr>
+                <th>目標額</th>
+                <td>{{ synergy_summary.target_amount }}</td>
+                <th>実績額</th>
+                <td>{{ synergy_summary.actual_amount }}</td>
+            </tr>
+            <tr>
+                <th>達成率</th>
+                <td>{{ synergy_summary.achievement_rate }}%</td>
+                <th>Run-rate効果額</th>
+                <td>{{ synergy_summary.run_rate_amount }}</td>
+            </tr>
+            <tr>
+                <th>一時費用</th>
+                <td>{{ synergy_summary.one_time_cost_amount }}</td>
+                <th>遅延施策</th>
+                <td>
+                    {% if synergy_summary.slippage_count %}
+                        <span style="color: #dc2626; font-weight: 700;">{{ synergy_summary.slippage_count }}</span>
+                    {% else %}
+                        0
+                    {% endif %}
+                </td>
+            </tr>
+            <tr>
+                <th>注意施策</th>
+                <td>{{ synergy_summary.at_risk_count }}</td>
+                <th>基準額</th>
+                <td>{{ synergy_summary.baseline_amount }}</td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+
+<div class="card detail-section">
+    <h3>4. KPIサマリー</h3>
+
+    <table>
+        <tbody>
+            <tr>
+                <th>KPI件数</th>
+                <td>{{ kpi_summary.count }}</td>
+                <th>健全率</th>
+                <td>{{ kpi_summary.healthy_rate }}%</td>
+            </tr>
+            <tr>
+                <th>GREEN</th>
+                <td><span style="color: #166534; font-weight: 700;">{{ kpi_summary.green_count }}</span></td>
+                <th>YELLOW</th>
+                <td><span style="color: #ca8a04; font-weight: 700;">{{ kpi_summary.yellow_count }}</span></td>
+            </tr>
+            <tr>
+                <th>RED</th>
+                <td><span style="color: #dc2626; font-weight: 700;">{{ kpi_summary.red_count }}</span></td>
+                <th>注意KPI</th>
+                <td>
+                    {% if kpi_summary.attention_count %}
+                        <span style="color: #dc2626; font-weight: 700;">{{ kpi_summary.attention_count }}</span>
+                    {% else %}
+                        0
+                    {% endif %}
+                </td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+
+<div class="card detail-section">
+    <h3>5. RED / YELLOW KPI</h3>
+
+    {% if attention_kpis %}
+        <table>
+            <thead>
+                <tr>
+                    <th>KPI ID</th>
+                    <th>Phase</th>
+                    <th>WS</th>
+                    <th>KPI名</th>
+                    <th>カテゴリ</th>
+                    <th>目標</th>
+                    <th>実績</th>
+                    <th>単位</th>
+                    <th>状態</th>
+                    <th>測定日</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in attention_kpis %}
+                    <tr>
+                        <td>{{ item.kpi_id|default:"-" }}</td>
+                        <td>{{ item.phase_id|default:"-" }}</td>
+                        <td>{{ item.workstream_id|default:"-" }}</td>
+                        <td>
+                            <strong>{{ item.kpi_name|default:"-" }}</strong>
+                            {% if item.definition %}
+                                <div style="color: #6b7280; font-size: 11.5px; margin-top: 4px;">
+                                    {{ item.definition }}
+                                </div>
+                            {% endif %}
+                        </td>
+                        <td>{{ item.kpi_category|default:"-" }}</td>
+                        <td>{{ item.target_value|default:"0" }}</td>
+                        <td>{{ item.actual_value|default:"0" }}</td>
+                        <td>{{ item.unit|default:"-" }}</td>
+                        <td>
+                            {% if item.status_color == "RED" %}
+                                <span style="color: #dc2626; font-weight: 700;">RED</span>
+                            {% elif item.status_color == "YELLOW" %}
+                                <span style="color: #ca8a04; font-weight: 700;">YELLOW</span>
+                            {% else %}
+                                {{ item.status_color|default:"-" }}
+                            {% endif %}
+                        </td>
+                        <td>{{ item.measurement_date|default:"-" }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <div class="empty">注意が必要なKPIはありません。</div>
+    {% endif %}
+</div>
+
+<div class="card detail-section">
+    <h3>6. 遅延・注意Synergy</h3>
+
+    {% if slippage_synergies or at_risk_synergies %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Synergy ID</th>
+                    <th>WS</th>
+                    <th>種別</th>
+                    <th>施策名</th>
+                    <th>目標額</th>
+                    <th>実績額</th>
+                    <th>Run-rate</th>
+                    <th>確度</th>
+                    <th>計画終了</th>
+                    <th>状態</th>
+                    <th>遅延</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in slippage_synergies %}
+                    <tr>
+                        <td>{{ item.synergy_id|default:"-" }}</td>
+                        <td>{{ item.workstream_id|default:"-" }}</td>
+                        <td>{{ item.synergy_type|default:"-" }}</td>
+                        <td>
+                            <strong>{{ item.initiative_name|default:"-" }}</strong>
+                            {% if item.description %}
+                                <div style="color: #6b7280; font-size: 11.5px; margin-top: 4px;">
+                                    {{ item.description }}
+                                </div>
+                            {% endif %}
+                        </td>
+                        <td>{{ item.target_amount|default:"0" }}</td>
+                        <td>{{ item.actual_amount|default:"0" }}</td>
+                        <td>{{ item.run_rate_amount|default:"0" }}</td>
+                        <td>{{ item.confidence_percent|default:"0" }}%</td>
+                        <td>{{ item.planned_end_date|default:"-" }}</td>
+                        <td>{{ item.status|default:"-" }}</td>
+                        <td><span style="color: #dc2626; font-weight: 700;">遅延</span></td>
+                    </tr>
+                {% endfor %}
+
+                {% for item in at_risk_synergies %}
+                    {% if item.slippage_flag != 1 and item.slippage_flag != "1" %}
+                        <tr>
+                            <td>{{ item.synergy_id|default:"-" }}</td>
+                            <td>{{ item.workstream_id|default:"-" }}</td>
+                            <td>{{ item.synergy_type|default:"-" }}</td>
+                            <td>
+                                <strong>{{ item.initiative_name|default:"-" }}</strong>
+                                {% if item.description %}
+                                    <div style="color: #6b7280; font-size: 11.5px; margin-top: 4px;">
+                                        {{ item.description }}
+                                    </div>
+                                {% endif %}
+                            </td>
+                            <td>{{ item.target_amount|default:"0" }}</td>
+                            <td>{{ item.actual_amount|default:"0" }}</td>
+                            <td>{{ item.run_rate_amount|default:"0" }}</td>
+                            <td>{{ item.confidence_percent|default:"0" }}%</td>
+                            <td>{{ item.planned_end_date|default:"-" }}</td>
+                            <td><span style="color: #ca8a04; font-weight: 700;">AT_RISK</span></td>
+                            <td>-</td>
+                        </tr>
+                    {% endif %}
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <div class="empty">遅延・注意Synergyはありません。</div>
+    {% endif %}
+</div>
+
+<div class="card detail-section">
+    <h3>7. 期限超過タスク</h3>
 
     {% if overdue_tasks %}
         <table>
@@ -113,14 +407,14 @@
             <tbody>
                 {% for task in overdue_tasks %}
                     <tr>
-                        <td>{{ task.task_id }}</td>
-                        <td>{{ task.phase_id }}</td>
-                        <td>{{ task.workstream_id }}</td>
-                        <td>{{ task.title }}</td>
-                        <td>{{ task.priority }}</td>
-                        <td>{{ task.status }}</td>
-                        <td>{{ task.owner_user_id }}</td>
-                        <td>{{ task.due_date }}</td>
+                        <td>{{ task.task_id|default:"-" }}</td>
+                        <td>{{ task.phase_id|default:"-" }}</td>
+                        <td>{{ task.workstream_id|default:"-" }}</td>
+                        <td>{{ task.title|default:"-" }}</td>
+                        <td>{{ task.priority|default:"-" }}</td>
+                        <td>{{ task.status|default:"-" }}</td>
+                        <td>{{ task.owner_user_id|default:"-" }}</td>
+                        <td>{{ task.due_date|default:"-" }}</td>
                     </tr>
                 {% endfor %}
             </tbody>
@@ -131,9 +425,9 @@
 </div>
 
 <div class="card detail-section">
-    <h3>3. 未完了タスク</h3>
+    <h3>8. 証跡未添付タスク</h3>
 
-    {% if incomplete_tasks %}
+    {% if missing_evidence_tasks %}
         <table>
             <thead>
                 <tr>
@@ -144,31 +438,37 @@
                     <th>優先度</th>
                     <th>状態</th>
                     <th>担当者</th>
-                    <th>期限</th>
+                    <th>証跡状態</th>
                 </tr>
             </thead>
             <tbody>
-                {% for task in incomplete_tasks %}
+                {% for task in missing_evidence_tasks %}
                     <tr>
-                        <td>{{ task.task_id }}</td>
-                        <td>{{ task.phase_id }}</td>
-                        <td>{{ task.workstream_id }}</td>
-                        <td>{{ task.title }}</td>
-                        <td>{{ task.priority }}</td>
-                        <td>{{ task.status }}</td>
-                        <td>{{ task.owner_user_id }}</td>
-                        <td>{{ task.due_date }}</td>
+                        <td>{{ task.task_id|default:"-" }}</td>
+                        <td>{{ task.phase_id|default:"-" }}</td>
+                        <td>{{ task.workstream_id|default:"-" }}</td>
+                        <td>{{ task.title|default:"-" }}</td>
+                        <td>{{ task.priority|default:"-" }}</td>
+                        <td>{{ task.status|default:"-" }}</td>
+                        <td>{{ task.owner_user_id|default:"-" }}</td>
+                        <td>
+                            {% if task.evidence_status %}
+                                {{ task.evidence_status }}
+                            {% else %}
+                                未添付
+                            {% endif %}
+                        </td>
                     </tr>
                 {% endfor %}
             </tbody>
         </table>
     {% else %}
-        <div class="empty">未完了タスクはありません。</div>
+        <div class="empty">証跡未添付タスクはありません。</div>
     {% endif %}
 </div>
 
 <div class="card detail-section">
-    <h3>4. 重要RAID</h3>
+    <h3>9. 重要RAID</h3>
 
     {% if high_raid_items %}
         <table>
@@ -188,15 +488,15 @@
             <tbody>
                 {% for item in high_raid_items %}
                     <tr>
-                        <td>{{ item.raid_id }}</td>
-                        <td>{{ item.raid_type }}</td>
-                        <td>{{ item.phase_id }}</td>
-                        <td>{{ item.workstream_id }}</td>
-                        <td>{{ item.title }}</td>
-                        <td>{{ item.score }}</td>
-                        <td>{{ item.escalation_level }}</td>
-                        <td>{{ item.status }}</td>
-                        <td>{{ item.due_date }}</td>
+                        <td>{{ item.raid_id|default:"-" }}</td>
+                        <td>{{ item.raid_type|default:"-" }}</td>
+                        <td>{{ item.phase_id|default:"-" }}</td>
+                        <td>{{ item.workstream_id|default:"-" }}</td>
+                        <td>{{ item.title|default:"-" }}</td>
+                        <td>{{ item.score|default:"-" }}</td>
+                        <td>{{ item.escalation_level|default:"-" }}</td>
+                        <td>{{ item.status|default:"-" }}</td>
+                        <td>{{ item.due_date|default:"-" }}</td>
                     </tr>
                 {% endfor %}
             </tbody>
@@ -207,7 +507,7 @@
 </div>
 
 <div class="card detail-section">
-    <h3>5. 未解決RAID</h3>
+    <h3>10. 未解決RAID</h3>
 
     {% if unresolved_raid_items %}
         <table>
@@ -227,15 +527,15 @@
             <tbody>
                 {% for item in unresolved_raid_items %}
                     <tr>
-                        <td>{{ item.raid_id }}</td>
-                        <td>{{ item.raid_type }}</td>
-                        <td>{{ item.phase_id }}</td>
-                        <td>{{ item.workstream_id }}</td>
-                        <td>{{ item.title }}</td>
-                        <td>{{ item.score }}</td>
-                        <td>{{ item.escalation_level }}</td>
-                        <td>{{ item.status }}</td>
-                        <td>{{ item.due_date }}</td>
+                        <td>{{ item.raid_id|default:"-" }}</td>
+                        <td>{{ item.raid_type|default:"-" }}</td>
+                        <td>{{ item.phase_id|default:"-" }}</td>
+                        <td>{{ item.workstream_id|default:"-" }}</td>
+                        <td>{{ item.title|default:"-" }}</td>
+                        <td>{{ item.score|default:"-" }}</td>
+                        <td>{{ item.escalation_level|default:"-" }}</td>
+                        <td>{{ item.status|default:"-" }}</td>
+                        <td>{{ item.due_date|default:"-" }}</td>
                     </tr>
                 {% endfor %}
             </tbody>
@@ -246,17 +546,15 @@
 </div>
 
 <div class="card detail-section">
-    <h3>6. 意思決定</h3>
+    <h3>11. 意思決定</h3>
 
     {% if decisions %}
         <table>
             <thead>
                 <tr>
                     <th>意思決定ID</th>
-                    <th>フェーズ</th>
-                    <th>WS</th>
                     <th>タイトル</th>
-                    <th>種別</th>
+                    <th>カテゴリ</th>
                     <th>決定者</th>
                     <th>決定日</th>
                     <th>状態</th>
@@ -265,14 +563,12 @@
             <tbody>
                 {% for decision in decisions %}
                     <tr>
-                        <td>{{ decision.decision_id }}</td>
-                        <td>{{ decision.phase_id }}</td>
-                        <td>{{ decision.workstream_id }}</td>
-                        <td>{{ decision.title }}</td>
-                        <td>{{ decision.decision_type }}</td>
-                        <td>{{ decision.decided_by_user_id }}</td>
-                        <td>{{ decision.decided_on }}</td>
-                        <td>{{ decision.status }}</td>
+                        <td>{{ decision.decision_id|default:"-" }}</td>
+                        <td>{{ decision.title|default:"-" }}</td>
+                        <td>{{ decision.category|default:"-" }}</td>
+                        <td>{{ decision.decision_maker|default:"-" }}</td>
+                        <td>{{ decision.decision_date|default:"-" }}</td>
+                        <td>{{ decision.status|default:"-" }}</td>
                     </tr>
                 {% endfor %}
             </tbody>
@@ -283,33 +579,31 @@
 </div>
 
 <div class="card detail-section">
-    <h3>7. 承認待ち</h3>
+    <h3>12. 承認待ち</h3>
 
     {% if pending_approvals %}
         <table>
             <thead>
                 <tr>
                     <th>承認ID</th>
-                    <th>対象種別</th>
-                    <th>対象ID</th>
-                    <th>ステップ</th>
-                    <th>依頼者</th>
+                    <th>対象</th>
+                    <th>タイトル</th>
+                    <th>申請者</th>
                     <th>承認者</th>
-                    <th>依頼日時</th>
+                    <th>期限</th>
                     <th>状態</th>
                 </tr>
             </thead>
             <tbody>
                 {% for approval in pending_approvals %}
                     <tr>
-                        <td>{{ approval.approval_id }}</td>
-                        <td>{{ approval.object_type }}</td>
-                        <td>{{ approval.object_id }}</td>
-                        <td>{{ approval.approval_step }}</td>
-                        <td>{{ approval.requester_user_id }}</td>
-                        <td>{{ approval.approver_user_id }}</td>
-                        <td>{{ approval.requested_at }}</td>
-                        <td>{{ approval.approval_status }}</td>
+                        <td>{{ approval.approval_id|default:"-" }}</td>
+                        <td>{{ approval.target_type|default:"-" }}</td>
+                        <td>{{ approval.title|default:"-" }}</td>
+                        <td>{{ approval.requester_user_id|default:"-" }}</td>
+                        <td>{{ approval.approver_user_id|default:"-" }}</td>
+                        <td>{{ approval.due_date|default:"-" }}</td>
+                        <td>{{ approval.approval_status|default:"-" }}</td>
                     </tr>
                 {% endfor %}
             </tbody>
@@ -320,7 +614,7 @@
 </div>
 
 <div class="card detail-section">
-    <h3>8. 資料一覧</h3>
+    <h3>13. 資料一覧</h3>
 
     {% if documents %}
         <table>
@@ -333,18 +627,24 @@
                     <th>種別</th>
                     <th>ファイル名</th>
                     <th>状態</th>
+                    <th class="no-print">表示</th>
                 </tr>
             </thead>
             <tbody>
                 {% for doc in documents %}
                     <tr>
-                        <td>{{ doc.document_id }}</td>
-                        <td>{{ doc.phase_id }}</td>
-                        <td>{{ doc.workstream_id }}</td>
-                        <td>{{ doc.document_title }}</td>
-                        <td>{{ doc.document_type }}</td>
-                        <td>{{ doc.file_name }}</td>
-                        <td>{{ doc.status }}</td>
+                        <td>{{ doc.document_id|default:"-" }}</td>
+                        <td>{{ doc.phase_id|default:"-" }}</td>
+                        <td>{{ doc.workstream_id|default:"-" }}</td>
+                        <td>{{ doc.document_title|default:"-" }}</td>
+                        <td>{{ doc.document_type|default:"-" }}</td>
+                        <td>{{ doc.file_name|default:"-" }}</td>
+                        <td>{{ doc.status|default:"-" }}</td>
+                        <td class="no-print">
+                            <a class="button-secondary" href="{% url 'documents:download' doc.document_id %}" target="_blank">
+                                開く
+                            </a>
+                        </td>
                     </tr>
                 {% endfor %}
             </tbody>

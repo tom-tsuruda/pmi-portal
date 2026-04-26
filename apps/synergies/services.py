@@ -1,3 +1,4 @@
+from apps.core.exceptions import RecordNotFoundError
 from apps.core.utils.datetime_utils import now_str
 from apps.core.utils.ids import next_id
 from apps.synergies.dtos import SynergyCreateDTO
@@ -16,6 +17,14 @@ class SynergyService:
 
     def filter_synergies(self, filters: dict) -> list[dict]:
         return self.synergy_repo.filter_synergies(filters)
+
+    def get_synergy(self, synergy_id: str) -> dict:
+        synergy = self.synergy_repo.find_one_by_synergy_id(synergy_id)
+
+        if not synergy:
+            raise RecordNotFoundError(f"synergies: synergy_id={synergy_id} not found")
+
+        return synergy
 
     def create_synergy(self, dto: SynergyCreateDTO) -> str:
         last_id = self.synergy_repo.get_last_synergy_id()
@@ -47,7 +56,8 @@ class SynergyService:
             "status": dto.status,
             "slippage_flag": dto.slippage_flag,
             "note": dto.note,
-            "beginner_guidance": dto.beginner_guidance or "この施策は、PMIで期待する統合効果を金額・進捗・確度で管理するためのものです。",
+            "beginner_guidance": dto.beginner_guidance
+            or "この施策は、PMIで期待する統合効果を金額・進捗・確度で管理するためのものです。",
 
             "created_at": current_time,
             "updated_at": current_time,
@@ -55,6 +65,40 @@ class SynergyService:
 
         self.synergy_repo.append_row(record)
         return synergy_id
+
+    def update_synergy(self, synergy_id: str, dto: SynergyCreateDTO) -> None:
+        self.get_synergy(synergy_id)
+
+        updates = {
+            "deal_id": dto.deal_id,
+            "workstream_id": dto.workstream_id,
+            "synergy_type": dto.synergy_type,
+            "initiative_name": dto.initiative_name,
+            "description": dto.description,
+
+            "baseline_amount": dto.baseline_amount,
+            "target_amount": dto.target_amount,
+            "actual_amount": dto.actual_amount,
+            "one_time_cost_amount": dto.one_time_cost_amount,
+            "run_rate_amount": dto.run_rate_amount,
+            "confidence_percent": dto.confidence_percent,
+
+            "planned_start_date": dto.planned_start_date,
+            "planned_end_date": dto.planned_end_date,
+            "actual_start_date": dto.actual_start_date,
+            "actual_end_date": dto.actual_end_date,
+
+            "owner_user_id": dto.owner_user_id,
+            "status": dto.status,
+            "slippage_flag": dto.slippage_flag,
+            "note": dto.note,
+            "beginner_guidance": dto.beginner_guidance
+            or "この施策は、PMIで期待する統合効果を金額・進捗・確度で管理するためのものです。",
+
+            "updated_at": now_str(),
+        }
+
+        self.synergy_repo.update_row("synergy_id", synergy_id, updates)
 
     def build_summary(self, deal_id: str) -> dict:
         synergies = self.list_synergies(deal_id=deal_id)

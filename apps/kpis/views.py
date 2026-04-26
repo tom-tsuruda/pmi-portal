@@ -2,7 +2,7 @@ from django.contrib import messages
 from django.shortcuts import redirect, render
 
 from apps.audit.services import AuditLogService
-from apps.core.exceptions import RepositoryError
+from apps.core.exceptions import RecordNotFoundError, RepositoryError
 from apps.deals.services import DealService
 from apps.kpis.dtos import KpiCreateDTO
 from apps.kpis.forms import KpiCreateForm, KpiFilterForm
@@ -49,6 +49,17 @@ def _build_deal_choices(include_empty: bool = False) -> list[tuple[str, str]]:
     return choices
 
 
+def _normalize_kpi_cleaned_data(cleaned: dict) -> dict:
+    data = cleaned.copy()
+
+    if data.get("measurement_date"):
+        data["measurement_date"] = data["measurement_date"].strftime("%Y-%m-%d")
+    else:
+        data["measurement_date"] = ""
+
+    return data
+
+
 def kpi_list(request):
     deal_choices = _build_deal_choices(include_empty=True)
     filter_form = KpiFilterForm(request.GET or None, deal_choices=deal_choices)
@@ -83,13 +94,7 @@ def kpi_create(request):
         form = KpiCreateForm(request.POST, deal_choices=deal_choices)
 
         if form.is_valid():
-            cleaned = form.cleaned_data.copy()
-
-            if cleaned.get("measurement_date"):
-                cleaned["measurement_date"] = cleaned["measurement_date"].strftime("%Y-%m-%d")
-            else:
-                cleaned["measurement_date"] = ""
-
+            cleaned = _normalize_kpi_cleaned_data(form.cleaned_data)
             dto = KpiCreateDTO(**cleaned)
 
             try:
@@ -128,5 +133,66 @@ def kpi_create(request):
         {
             "form": form,
             "deal_id": initial_deal_id,
+        },
+    )
+
+
+def kpi_edit(request, kpi_id: str):
+    deal_choices = _build_deal_choices(include_empty=False)
+
+    try:
+        kpi = kpi_service.get_kpi(kpi_id)
+    except RecordNotFoundError:
+        messages.error(request, f"KPIが見つかりません: {kpi_id}")
+        return redirect("kpis:list")
+    except RepositoryError as e:
+        messages.error(request, str(e))
+        return redirect("kpis:list")
+
+    if request.method == "POST":
+        form = KpiCreateForm(request.POST, deal_choices=deal_choices)
+
+        if form.is_valid():
+            cleaned = _normalize_kpi_cleaned_data(form.cleaned_data)
+            dto = KpiCreateDTO(**cleaned)
+
+            try:
+                kpi_service.update_kpi(kpi_id, dto)
+
+                audit_service.log(
+                    deal_id=dto.deal_id,
+                    object_type="KPI",
+                    object_id=kpi_id,
+                    action_type="UPDATE",
+                    before_value=str(kpi.get("actual_value") or ""),
+                    after_value=str(dto.actual_value),
+                    acted_by_user_id=dto.owner_user_id,
+                    ip_address=request.META.get("REMOTE_ADDR", ""),
+                    note="KPIを更新しました。",
+                )
+
+                messages.success(request, f"KPIを更新しました: {kpi_id}")
+
+                if dto.deal_id:
+                    return redirect("deals:detail", deal_id=dto.deal_id)
+
+                return redirect("kpis:list")
+
+            except RepositoryError as e:
+                messages.error(request, str(e))
+    else:
+        form = KpiCreateForm(
+            initial=kpi,
+            deal_choices=deal_choices,
+        )
+
+    return render(
+        request,
+        "kpis/kpi_edit.html",
+        {
+            "form": form,
+            "kpi": kpi,
+            "kpi_id": kpi_id,
+            "deal_id": kpi.get("deal_id") or "",
         },
     )
