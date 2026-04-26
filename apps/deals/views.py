@@ -200,7 +200,7 @@ def deal_detail(request, deal_id: str):
             "phase_summary": phase_summary,
             "workstream_summary": workstream_summary,
             "evidence_summary": evidence_summary,
-            
+            "synergy_summary": synergy_summary,
         },
     )
 
@@ -314,6 +314,8 @@ def deal_report(request, deal_id: str):
         decision for decision in decisions
         if str(decision.get("status") or "") == "DECIDED"
     ]
+
+    synergy_summary = synergy_service.build_summary(deal_id)
 
     report_summary = {
         "task_total": task_total,
