@@ -1,17 +1,21 @@
+from datetime import date, datetime
+
 from django.contrib import messages
 from django.shortcuts import redirect, render
 
+from apps.approvals.services import ApprovalService
 from apps.core.exceptions import RecordNotFoundError, RepositoryError
 from apps.deals.dtos import DealCreateDTO
 from apps.deals.forms import DealCreateForm, DealFilterForm, DealStatusUpdateForm
 from apps.deals.services import DealService
-from apps.documents.services import DocumentService
-from apps.raid.services import RaidService
-from apps.tasks.services import TaskService
 from apps.decisions.services import DecisionService
-from apps.approvals.services import ApprovalService
+from apps.documents.services import DocumentService
 from apps.questionnaire.forms import QuestionnaireAnswerForm
 from apps.questionnaire.services import QuestionnaireService
+from apps.raid.services import RaidService
+from apps.tasks.services import TaskService
+
+
 deal_service = DealService()
 task_service = TaskService()
 raid_service = RaidService()
@@ -19,6 +23,7 @@ document_service = DocumentService()
 decision_service = DecisionService()
 approval_service = ApprovalService()
 questionnaire_service = QuestionnaireService()
+
 
 def deal_list(request):
     filter_form = DealFilterForm(request.GET or None)
@@ -46,6 +51,12 @@ def deal_list(request):
 
 
 def deal_create(request):
+    """
+    新規案件登録。
+
+    案件基本情報とPMI質問票を同じ画面で入力し、
+    登録後に質問票回答を保存して初期タスクを自動生成する。
+    """
     try:
         questions = questionnaire_service.list_questions()
     except RepositoryError as e:
@@ -122,9 +133,34 @@ def deal_detail(request, deal_id: str):
         messages.error(request, str(e))
         return redirect("deals:list")
 
-    task_total = len([task for task in tasks if task.get("status") != "CANCELLED"])
-    task_done = len([task for task in tasks if task.get("status") == "DONE"])
+    active_tasks = [
+        task for task in tasks
+        if str(task.get("status") or "") != "CANCELLED"
+    ]
+
+    completed_tasks = [
+        task for task in active_tasks
+        if str(task.get("status") or "") == "DONE"
+    ]
+
+    task_total = len(active_tasks)
+    task_done = len(completed_tasks)
     task_progress = round((task_done / task_total) * 100) if task_total else 0
+
+    phase_summary = _build_task_group_summary(
+        tasks=tasks,
+        group_key="phase_id",
+        default_label="未設定",
+    )
+
+    workstream_summary = _build_task_group_summary(
+        tasks=tasks,
+        group_key="workstream_id",
+        default_label="未設定",
+    )
+
+    missing_evidence_tasks = _build_missing_evidence_tasks(tasks)
+    missing_evidence_count = len(missing_evidence_tasks)
 
     open_raid_count = len(
         [
@@ -162,6 +198,10 @@ def deal_detail(request, deal_id: str):
             "status_form": status_form,
             "decisions": decisions,
             "approvals": approvals,
+            "phase_summary": phase_summary,
+            "workstream_summary": workstream_summary,
+            "missing_evidence_tasks": missing_evidence_tasks,
+            "missing_evidence_count": missing_evidence_count,
         },
     )
 
@@ -212,7 +252,6 @@ def deal_reactivate(request, deal_id: str):
 
     return redirect("deals:detail", deal_id=deal_id)
 
-from datetime import date, datetime
 
 def deal_report(request, deal_id: str):
     try:
@@ -251,6 +290,8 @@ def deal_report(request, deal_id: str):
         if _is_overdue(task.get("due_date"))
     ]
 
+    missing_evidence_tasks = _build_missing_evidence_tasks(tasks)
+
     task_total = len(active_tasks)
     task_done = len(completed_tasks)
     task_progress = round((task_done / task_total) * 100) if task_total else 0
@@ -281,6 +322,7 @@ def deal_report(request, deal_id: str):
         "task_progress": task_progress,
         "incomplete_task_count": len(incomplete_tasks),
         "overdue_task_count": len(overdue_tasks),
+        "missing_evidence_count": len(missing_evidence_tasks),
         "unresolved_raid_count": len(unresolved_raid_items),
         "high_raid_count": len(high_raid_items),
         "decision_count": len(decisions),
@@ -297,6 +339,7 @@ def deal_report(request, deal_id: str):
             "tasks": tasks,
             "incomplete_tasks": incomplete_tasks,
             "overdue_tasks": overdue_tasks,
+            "missing_evidence_tasks": missing_evidence_tasks,
             "raid_items": raid_items,
             "unresolved_raid_items": unresolved_raid_items,
             "high_raid_items": high_raid_items,
@@ -307,6 +350,173 @@ def deal_report(request, deal_id: str):
             "report_summary": report_summary,
         },
     )
+
+
+def _build_task_group_summary(
+    tasks: list[dict],
+    group_key: str,
+    default_label: str = "未設定",
+) -> list[dict]:
+    """
+    タスクを phase_id / workstream_id などで集計する。
+    CANCELLED は集計対象外。
+    """
+    grouped = {}
+
+    for task in tasks:
+        status = str(task.get("status") or "").strip()
+
+        if status == "CANCELLED":
+            continue
+
+        key = str(task.get(group_key) or "").strip() or default_label
+
+        if key not in grouped:
+            grouped[key] = {
+                "key": key,
+                "label": key,
+                "total": 0,
+                "done": 0,
+                "open": 0,
+                "progress": 0,
+                "high": 0,
+                "overdue": 0,
+            }
+
+        grouped[key]["total"] += 1
+
+        if status == "DONE":
+            grouped[key]["done"] += 1
+        else:
+            grouped[key]["open"] += 1
+
+        if str(task.get("priority") or "").strip() == "HIGH":
+            grouped[key]["high"] += 1
+
+        if _is_overdue(task.get("due_date")) and status not in ["DONE", "CANCELLED"]:
+            grouped[key]["overdue"] += 1
+
+    results = []
+
+    for item in grouped.values():
+        total = item["total"]
+        done = item["done"]
+        item["progress"] = round((done / total) * 100) if total else 0
+        results.append(item)
+
+    def sort_key(item):
+        order = {
+            "PRE_CLOSE": 10,
+            "DAY1": 20,
+            "DAY30": 30,
+            "DAY100": 40,
+            "TSA": 50,
+            "POST100": 60,
+            "PMO": 10,
+            "HR": 20,
+            "IT": 30,
+            "FINANCE": 40,
+            "LEGAL": 50,
+            "SALES": 60,
+            "OPS": 70,
+            "COMMS": 80,
+            "未設定": 999,
+        }
+        return order.get(item["key"], 500)
+
+    return sorted(results, key=sort_key)
+
+
+def _build_missing_evidence_tasks(tasks: list[dict]) -> list[dict]:
+    """
+    証跡が必要だが、まだ証跡添付済みになっていないタスクを抽出する。
+
+    対象:
+    - evidence_required_flag が 1 / TRUE / YES / はい
+    - status が CANCELLED ではない
+    - evidence_status が ATTACHED / COMPLETED / DONE / NOT_REQUIRED ではない
+    """
+    missing_tasks = []
+
+    completed_evidence_statuses = {
+        "ATTACHED",
+        "COMPLETED",
+        "DONE",
+        "OK",
+        "添付済",
+        "完了",
+    }
+
+    not_required_statuses = {
+        "NOT_REQUIRED",
+        "不要",
+        "対象外",
+    }
+
+    for task in tasks:
+        status = str(task.get("status") or "").strip()
+        evidence_required_flag = task.get("evidence_required_flag")
+        evidence_status = str(task.get("evidence_status") or "").strip()
+
+        if status == "CANCELLED":
+            continue
+
+        if not _to_bool_flag(evidence_required_flag):
+            continue
+
+        if evidence_status in completed_evidence_statuses:
+            continue
+
+        if evidence_status in not_required_statuses:
+            continue
+
+        missing_tasks.append(task)
+
+    def sort_key(task):
+        priority_order = {
+            "HIGH": 10,
+            "MEDIUM": 20,
+            "LOW": 30,
+        }
+
+        phase_order = {
+            "PRE_CLOSE": 10,
+            "DAY1": 20,
+            "DAY30": 30,
+            "DAY100": 40,
+            "TSA": 50,
+            "POST100": 60,
+        }
+
+        priority = str(task.get("priority") or "")
+        phase = str(task.get("phase_id") or "")
+        due_date = str(task.get("due_date") or "9999-12-31")
+
+        return (
+            priority_order.get(priority, 99),
+            phase_order.get(phase, 99),
+            due_date,
+            str(task.get("task_id") or ""),
+        )
+
+    return sorted(missing_tasks, key=sort_key)
+
+
+def _to_bool_flag(value) -> bool:
+    text = str(value or "").strip()
+
+    return text in [
+        "1",
+        "TRUE",
+        "True",
+        "true",
+        "YES",
+        "Yes",
+        "yes",
+        "はい",
+        "有",
+        "あり",
+    ]
 
 
 def _is_overdue(due_date_value) -> bool:
