@@ -87,6 +87,13 @@
             <div class="summary-value">{{ documents|length }}</div>
             <div class="summary-sub">Evidence / Template / Report</div>
         </div>
+        <div class="summary-box">
+            <div class="summary-label">KPI注意</div>
+            <div class="summary-value">{{ kpi_summary.attention_count }}</div>
+            <div class="summary-sub">
+                RED {{ kpi_summary.red_count }} / YELLOW {{ kpi_summary.yellow_count }}
+            </div>
+        </div>
     </div>
 </div>
 
@@ -214,6 +221,68 @@
                 <td>{{ synergy_summary.at_risk_count }}</td>
                 <th>基準額</th>
                 <td>{{ synergy_summary.baseline_amount }}</td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+<div class="detail-section card">
+    <div class="page-header">
+        <div>
+            <h2>KPIサマリー</h2>
+            <div style="color: #6b7280;">
+                PMIの進捗、効果、リスク状態をKPIで確認します。RED / YELLOW は注意が必要な指標です。
+            </div>
+        </div>
+
+        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+            <a class="button-secondary" href="{% url 'kpis:list' %}?deal_id={{ deal.deal_id }}">
+                KPI一覧へ
+            </a>
+            <a class="button-secondary" href="{% url 'kpis:create' %}?deal_id={{ deal.deal_id }}">
+                KPI登録
+            </a>
+        </div>
+    </div>
+
+    <table>
+        <tbody>
+            <tr>
+                <th>KPI件数</th>
+                <td>{{ kpi_summary.count }}</td>
+                <th>健全率</th>
+                <td>{{ kpi_summary.healthy_rate }}%</td>
+            </tr>
+            <tr>
+                <th>GREEN</th>
+                <td>
+                    <span style="color: #166534; font-weight: 700;">
+                        {{ kpi_summary.green_count }}
+                    </span>
+                </td>
+                <th>YELLOW</th>
+                <td>
+                    <span style="color: #ca8a04; font-weight: 700;">
+                        {{ kpi_summary.yellow_count }}
+                    </span>
+                </td>
+            </tr>
+            <tr>
+                <th>RED</th>
+                <td>
+                    <span style="color: #dc2626; font-weight: 700;">
+                        {{ kpi_summary.red_count }}
+                    </span>
+                </td>
+                <th>注意KPI</th>
+                <td>
+                    {% if kpi_summary.attention_count %}
+                        <span style="color: #dc2626; font-weight: 700;">
+                            {{ kpi_summary.attention_count }}
+                        </span>
+                    {% else %}
+                        0
+                    {% endif %}
+                </td>
             </tr>
         </tbody>
     </table>

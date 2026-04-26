@@ -15,6 +15,7 @@ from apps.questionnaire.services import QuestionnaireService
 from apps.raid.services import RaidService
 from apps.tasks.services import TaskService
 from apps.synergies.services import SynergyService
+from apps.kpis.services import KpiService
 
 deal_service = DealService()
 task_service = TaskService()
@@ -24,6 +25,7 @@ decision_service = DecisionService()
 approval_service = ApprovalService()
 questionnaire_service = QuestionnaireService()
 synergy_service = SynergyService()
+kpi_service = KpiService()
 
 def deal_list(request):
     filter_form = DealFilterForm(request.GET or None)
@@ -160,7 +162,8 @@ def deal_detail(request, deal_id: str):
 
     evidence_summary = _build_evidence_summary(tasks)
     synergy_summary = synergy_service.build_summary(deal_id)
-
+    kpi_summary = kpi_service.build_summary(deal_id)
+    
     open_raid_count = len(
         [
             item
@@ -201,6 +204,8 @@ def deal_detail(request, deal_id: str):
             "workstream_summary": workstream_summary,
             "evidence_summary": evidence_summary,
             "synergy_summary": synergy_summary,
+            "synergy_summary": synergy_summary,
+            "kpi_summary": kpi_summary,
         },
     )
 
@@ -316,6 +321,7 @@ def deal_report(request, deal_id: str):
     ]
 
     synergy_summary = synergy_service.build_summary(deal_id)
+    kpi_summary = kpi_service.build_summary(deal_id)
 
     report_summary = {
         "task_total": task_total,
@@ -350,6 +356,7 @@ def deal_report(request, deal_id: str):
             "pending_approvals": pending_approvals,
             "report_summary": report_summary,
             "synergy_summary": synergy_summary,
+            "kpi_summary": kpi_summary,
         },
     )
 

@@ -56,6 +56,7 @@ INSTALLED_APPS = [
     "apps.audit",
     "apps.dashboard",
     "apps.synergies",
+    "apps.kpis",
 ]
 
 MIDDLEWARE = [

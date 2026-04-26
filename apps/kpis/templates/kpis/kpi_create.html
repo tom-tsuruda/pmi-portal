@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+
+{% block title %}KPI登録 | PMI Portal{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="page-header">
+        <div>
+            <h2>KPI登録</h2>
+            <p style="margin: 6px 0 0; color: #6b7280;">
+                PMIの進捗、効果、リスク状態を定量的に確認するKPIを登録します。
+            </p>
+        </div>
+
+        {% if deal_id %}
+            <a class="button-secondary" href="{% url 'deals:detail' deal_id %}">案件詳細へ戻る</a>
+        {% else %}
+            <a class="button-secondary" href="{% url 'kpis:list' %}">一覧へ戻る</a>
+        {% endif %}
+    </div>
+
+    <div style="background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 10px; padding: 14px; margin-bottom: 18px;">
+        <strong>KPIの考え方：</strong>
+        <span style="color: #4b5563;">
+            KPIは、PMIの進捗や効果を数字で見るための指標です。
+            GREEN / YELLOW / RED で状態を分けておくと、SteerCoや月次報告で使いやすくなります。
+        </span>
+    </div>
+
+    <form method="post">
+        {% csrf_token %}
+
+        {{ form.as_p }}
+
+        <div class="form-actions">
+            <button class="button" type="submit">登録する</button>
+
+            {% if deal_id %}
+                <a class="button-secondary" href="{% url 'deals:detail' deal_id %}">キャンセル</a>
+            {% else %}
+                <a class="button-secondary" href="{% url 'kpis:list' %}">キャンセル</a>
+            {% endif %}
+        </div>
+    </form>
+</div>
+{% endblock %}

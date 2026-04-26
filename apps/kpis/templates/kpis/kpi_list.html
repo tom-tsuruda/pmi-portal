@@ -1,0 +1,143 @@
+{% extends "base.html" %}
+
+{% block title %}KPI一覧 | PMI Portal{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="page-header">
+        <div>
+            <h2>KPI一覧</h2>
+            <p style="margin: 6px 0 0; color: #6b7280;">
+                PMIの進捗、効果、リスク状態をKPIで管理します。
+            </p>
+        </div>
+
+        <a class="button" href="{% url 'kpis:create' %}">KPI登録</a>
+    </div>
+
+    <form method="get" class="filter-box">
+        <div class="filter-grid">
+            <div>
+                {{ filter_form.keyword.label_tag }}
+                {{ filter_form.keyword }}
+            </div>
+
+            <div>
+                {{ filter_form.deal_id.label_tag }}
+                {{ filter_form.deal_id }}
+            </div>
+
+            <div>
+                {{ filter_form.workstream_id.label_tag }}
+                {{ filter_form.workstream_id }}
+            </div>
+
+            <div>
+                {{ filter_form.phase_id.label_tag }}
+                {{ filter_form.phase_id }}
+            </div>
+
+            <div>
+                {{ filter_form.kpi_category.label_tag }}
+                {{ filter_form.kpi_category }}
+            </div>
+
+            <div>
+                {{ filter_form.measurement_frequency.label_tag }}
+                {{ filter_form.measurement_frequency }}
+            </div>
+
+            <div>
+                {{ filter_form.status_color.label_tag }}
+                {{ filter_form.status_color }}
+            </div>
+
+            <div>
+                {{ filter_form.owner_user_id.label_tag }}
+                {{ filter_form.owner_user_id }}
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <button class="button" type="submit">絞り込み</button>
+            <a class="button-secondary" href="{% url 'kpis:list' %}">解除</a>
+        </div>
+    </form>
+
+    <div style="margin: 16px 0; color: #6b7280;">
+        表示件数：{{ kpis|length }} 件
+    </div>
+
+    {% if kpis %}
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>案件</th>
+                    <th>Phase</th>
+                    <th>WS</th>
+                    <th>KPI名</th>
+                    <th>カテゴリ</th>
+                    <th>基準</th>
+                    <th>目標</th>
+                    <th>実績</th>
+                    <th>単位</th>
+                    <th>頻度</th>
+                    <th>測定日</th>
+                    <th>担当</th>
+                    <th>状態</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in kpis %}
+                    <tr>
+                        <td>{{ item.kpi_id|default:"-" }}</td>
+                        <td>
+                            {% if item.deal_id %}
+                                <a href="{% url 'deals:detail' item.deal_id %}">
+                                    {{ item.deal_id }}
+                                </a>
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                        <td>{{ item.phase_id|default:"-" }}</td>
+                        <td>{{ item.workstream_id|default:"-" }}</td>
+                        <td>
+                            <strong>{{ item.kpi_name|default:"-" }}</strong>
+                            {% if item.definition %}
+                                <div style="color: #6b7280; font-size: 11.5px; margin-top: 4px;">
+                                    {{ item.definition }}
+                                </div>
+                            {% endif %}
+                        </td>
+                        <td>{{ item.kpi_category|default:"-" }}</td>
+                        <td>{{ item.baseline_value|default:"0" }}</td>
+                        <td>{{ item.target_value|default:"0" }}</td>
+                        <td>{{ item.actual_value|default:"0" }}</td>
+                        <td>{{ item.unit|default:"-" }}</td>
+                        <td>{{ item.measurement_frequency|default:"-" }}</td>
+                        <td>{{ item.measurement_date|default:"-" }}</td>
+                        <td>{{ item.owner_user_id|default:"-" }}</td>
+                        <td>
+                            {% if item.status_color == "GREEN" %}
+                                <span style="color: #166534; font-weight: 700;">GREEN</span>
+                            {% elif item.status_color == "YELLOW" %}
+                                <span style="color: #ca8a04; font-weight: 700;">YELLOW</span>
+                            {% elif item.status_color == "RED" %}
+                                <span style="color: #dc2626; font-weight: 700;">RED</span>
+                            {% else %}
+                                {{ item.status_color|default:"-" }}
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <div class="empty">
+            条件に一致するKPIはありません。
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
