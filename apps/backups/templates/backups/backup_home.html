@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+
+{% block title %}バックアップ | PMI Portal{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="page-header">
+        <div>
+            <h2>Excelバックアップ</h2>
+            <p style="margin: 6px 0 0; color: #6b7280;">
+                PMI台帳Excelを1つだけバックアップします。作成するたびに同じバックアップファイルへ上書きします。
+            </p>
+        </div>
+
+        <form method="post" action="{% url 'backups:create' %}">
+            {% csrf_token %}
+            <button class="button" type="submit">
+                バックアップ作成
+            </button>
+        </form>
+    </div>
+
+    <div style="background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 10px; padding: 14px; margin-bottom: 18px;">
+        <strong>運用方針：</strong>
+        <span style="color: #4b5563;">
+            バックアップは常に1ファイルだけ保持します。過去世代は残さず、最新バックアップで上書きします。
+            復元は安全のため画面からは行わず、必要時に手動で実施します。
+        </span>
+    </div>
+
+    {% if backup_info %}
+        <table>
+            <tbody>
+                <tr>
+                    <th style="width: 220px;">現在のExcel台帳</th>
+                    <td>{{ backup_info.source_path }}</td>
+                </tr>
+                <tr>
+                    <th>バックアップ先</th>
+                    <td>{{ backup_info.backup_path }}</td>
+                </tr>
+                <tr>
+                    <th>バックアップ状態</th>
+                    <td>
+                        {% if backup_info.exists %}
+                            <span style="color: #166534; font-weight: 700;">作成済み</span>
+                        {% else %}
+                            <span style="color: #dc2626; font-weight: 700;">未作成</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                <tr>
+                    <th>最終バックアップ日時</th>
+                    <td>
+                        {% if backup_info.modified_at %}
+                            {{ backup_info.modified_at|date:"Y-m-d H:i:s" }}
+                        {% else %}
+                            -
+                        {% endif %}
+                    </td>
+                </tr>
+                <tr>
+                    <th>ファイルサイズ</th>
+                    <td>{{ backup_info.size_kb }} KB</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="form-actions">
+            <form method="post" action="{% url 'backups:create' %}">
+                {% csrf_token %}
+                <button class="button" type="submit">
+                    今すぐ上書きバックアップ
+                </button>
+            </form>
+
+            {% if backup_info.exists %}
+                <a class="button-secondary" href="{% url 'backups:download' %}">
+                    バックアップをダウンロード
+                </a>
+            {% else %}
+                <span style="color: #6b7280;">
+                    まだバックアップがないため、ダウンロードできません。
+                </span>
+            {% endif %}
+        </div>
+    {% else %}
+        <div class="empty">
+            バックアップ情報を取得できませんでした。
+        </div>
+    {% endif %}
+</div>
+
+<div class="card detail-section">
+    <h3>復元するときの手順</h3>
+
+    <p style="color: #4b5563; line-height: 1.8;">
+        復元は誤操作防止のため、この画面からは行いません。必要な場合は、以下の手順で手動復元してください。
+    </p>
+
+    <ol style="color: #4b5563; line-height: 1.9;">
+        <li>Djangoサーバーを停止する</li>
+        <li>現在のExcel台帳を別名で退避する</li>
+        <li>バックアップExcelを元のExcel台帳名にコピーする</li>
+        <li>Djangoサーバーを再起動する</li>
+    </ol>
+</div>
+{% endblock %}

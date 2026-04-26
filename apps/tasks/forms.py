@@ -59,7 +59,11 @@ class TaskCreateForm(forms.Form):
         label="タスク名",
         max_length=200,
         required=True,
-        widget=forms.TextInput(attrs={"placeholder": "例：Day1向け従業員通知文の確認"}),
+        widget=forms.TextInput(
+            attrs={
+                "placeholder": "例：Day1向け従業員通知文の確認",
+            }
+        ),
     )
 
     description = forms.CharField(
@@ -84,21 +88,45 @@ class TaskCreateForm(forms.Form):
         label="担当者ID",
         max_length=100,
         required=False,
-        widget=forms.TextInput(attrs={"placeholder": "例：u001"}),
+        widget=forms.TextInput(
+            attrs={
+                "placeholder": "例：u001",
+            }
+        ),
     )
 
     due_date = forms.CharField(
         label="期限",
         max_length=20,
         required=False,
-        widget=forms.TextInput(attrs={"placeholder": "例：2026-04-30"}),
+        widget=forms.TextInput(
+            attrs={
+                "placeholder": "例：2026-04-30",
+            }
+        ),
     )
 
     template_source_id = forms.CharField(
         label="テンプレート元ID",
         max_length=100,
         required=False,
-        widget=forms.TextInput(attrs={"placeholder": "例：TPL-000001"}),
+        widget=forms.TextInput(
+            attrs={
+                "placeholder": "例：TPL-000001",
+            }
+        ),
+    )
+
+    dependency_task_ids = forms.CharField(
+        label="依存元タスクID",
+        max_length=500,
+        required=False,
+        widget=forms.TextInput(
+            attrs={
+                "placeholder": "例：TASK-000001,TASK-000003",
+            }
+        ),
+        help_text="このタスクを始める前に完了している必要があるタスクIDをカンマ区切りで入力します。",
     )
 
     regulation_flag = forms.BooleanField(

@@ -11,12 +11,15 @@ class TaskService:
 
     def list_tasks(self, deal_id: str | None = None) -> list[dict]:
         if deal_id:
-            return self.task_repo.find_by_deal(deal_id)
+            tasks = self.task_repo.find_by_deal(deal_id)
+        else:
+            tasks = self.task_repo.find_all()
 
-        return self.task_repo.find_all()
+        return self.enrich_dependency_status(tasks)
 
     def filter_tasks(self, filters: dict) -> list[dict]:
-        return self.task_repo.filter_tasks(filters)
+        tasks = self.task_repo.filter_tasks(filters)
+        return self.enrich_dependency_status(tasks)
 
     def get_task(self, task_id: str) -> dict:
         if not task_id:
@@ -61,6 +64,7 @@ class TaskService:
             "evidence_status": "REQUIRED",
 
             "template_source_id": dto.template_source_id,
+            "dependency_task_ids": dto.dependency_task_ids,
             "related_decision_id": "",
             "related_raid_id": "",
             "related_document_id": "",
@@ -95,7 +99,13 @@ class TaskService:
         task_id = self.create_task(dto)
         return True, task_id
 
-    def update_task(self, task_id: str, dto: TaskCreateDTO, status: str = "TODO", completion_note: str = "") -> None:
+    def update_task(
+        self,
+        task_id: str,
+        dto: TaskCreateDTO,
+        status: str = "TODO",
+        completion_note: str = "",
+    ) -> None:
         task = self.get_task(task_id)
 
         updates = {
@@ -109,6 +119,7 @@ class TaskService:
             "owner_user_id": dto.owner_user_id,
             "due_date": dto.due_date,
             "template_source_id": dto.template_source_id,
+            "dependency_task_ids": dto.dependency_task_ids,
             "regulation_flag": dto.regulation_flag,
             "why_this_task": dto.why_this_task or "PMIの進捗を管理するための基本タスクです。",
             "beginner_guidance": dto.beginner_guidance or "まずは担当者・期限・完了条件を確認してください。",
@@ -143,9 +154,6 @@ class TaskService:
         )
 
     def mark_evidence_attached(self, task_id: str, document_id: str = "") -> None:
-        """
-        証跡文書が紐づいたタスクを ATTACHED に更新する。
-        """
         if not task_id:
             return
 
@@ -162,3 +170,81 @@ class TaskService:
             task_id,
             updates,
         )
+
+    def parse_dependency_ids(self, value: str) -> list[str]:
+        text = str(value or "").replace("、", ",").replace("，", ",")
+
+        return [
+            item.strip()
+            for item in text.split(",")
+            if item.strip()
+        ]
+
+    def get_predecessor_tasks(self, task: dict) -> list[dict]:
+        dependency_ids = self.parse_dependency_ids(task.get("dependency_task_ids"))
+        predecessors = []
+
+        for dependency_id in dependency_ids:
+            try:
+                predecessors.append(self.get_task(dependency_id))
+            except RecordNotFoundError:
+                predecessors.append(
+                    {
+                        "task_id": dependency_id,
+                        "title": "見つからないタスクID",
+                        "status": "MISSING",
+                    }
+                )
+
+        return predecessors
+
+    def get_blocking_predecessor_tasks(self, task: dict) -> list[dict]:
+        predecessors = self.get_predecessor_tasks(task)
+
+        return [
+            item for item in predecessors
+            if str(item.get("status") or "") != "DONE"
+        ]
+
+    def is_blocked_by_dependencies(self, task: dict) -> bool:
+        if str(task.get("status") or "") in ["DONE", "CANCELLED"]:
+            return False
+
+        return len(self.get_blocking_predecessor_tasks(task)) > 0
+
+    def enrich_dependency_status(self, tasks: list[dict]) -> list[dict]:
+        enriched_tasks = []
+
+        for task in tasks:
+            item = task.copy()
+            dependency_ids = self.parse_dependency_ids(item.get("dependency_task_ids"))
+            blocking_tasks = self.get_blocking_predecessor_tasks(item) if dependency_ids else []
+
+            item["dependency_count"] = len(dependency_ids)
+            item["blocking_dependency_count"] = len(blocking_tasks)
+            item["dependency_status"] = "BLOCKED" if blocking_tasks else ("HAS_DEPENDENCY" if dependency_ids else "")
+            item["is_dependency_blocked"] = bool(blocking_tasks)
+
+            enriched_tasks.append(item)
+
+        return enriched_tasks
+
+    def list_blocked_tasks(self, deal_id: str | None = None) -> list[dict]:
+        tasks = self.list_tasks(deal_id=deal_id)
+
+        return [
+            task for task in tasks
+            if task.get("is_dependency_blocked")
+        ]
+
+    def list_dependent_tasks(self, task_id: str) -> list[dict]:
+        tasks = self.list_tasks()
+        dependents = []
+
+        for task in tasks:
+            dependency_ids = self.parse_dependency_ids(task.get("dependency_task_ids"))
+
+            if task_id in dependency_ids:
+                dependents.append(task)
+
+        return dependents

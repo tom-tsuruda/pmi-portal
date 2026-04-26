@@ -57,6 +57,7 @@ INSTALLED_APPS = [
     "apps.dashboard",
     "apps.synergies",
     "apps.kpis",
+    "apps.backups",
 ]
 
 MIDDLEWARE = [

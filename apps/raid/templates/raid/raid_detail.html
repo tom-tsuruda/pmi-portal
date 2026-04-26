@@ -1,0 +1,201 @@
+{% extends "base.html" %}
+
+{% block title %}RAID詳細 | PMI Portal{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="page-header">
+        <div>
+            <div style="margin-bottom: 12px;">
+                <a href="{% url 'raid:list' %}">RAID一覧</a>
+                <span style="color: #6b7280;"> / RAID詳細</span>
+            </div>
+
+            <h2>{{ item.title|default:"RAID詳細" }}</h2>
+
+            <p style="margin: 6px 0 0; color: #6b7280;">
+                {{ item.raid_id|default:"-" }} / {{ item.deal_id|default:"-" }} / {{ item.raid_type|default:"-" }} / {{ item.phase_id|default:"-" }} / {{ item.workstream_id|default:"-" }}
+            </p>
+        </div>
+
+        <div class="no-print" style="display: flex; gap: 8px; flex-wrap: wrap;">
+            {% if item.deal_id %}
+                <a class="button-secondary" href="{% url 'deals:detail' item.deal_id %}">
+                    案件詳細へ
+                </a>
+            {% endif %}
+
+            <a class="button-secondary" href="{% url 'raid:edit' item.raid_id %}">
+                編集
+            </a>
+        </div>
+    </div>
+
+    <div style="background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 10px; padding: 14px; margin-bottom: 18px;">
+        <strong>このRAIDの確認ポイント：</strong>
+        <span style="color: #4b5563;">
+            発生可能性、影響度、スコア、対応策、期限を確認します。スコアが高いものは、SteerCoでの報告対象になります。
+        </span>
+    </div>
+
+    <div class="summary-grid">
+        <div class="summary-box">
+            <div class="summary-label">RAID種別</div>
+            <div class="summary-value" style="font-size: 18px;">{{ item.raid_type|default:"-" }}</div>
+            <div class="summary-sub">Risk / Assumption / Issue / Dependency</div>
+        </div>
+
+        <div class="summary-box">
+            <div class="summary-label">スコア</div>
+            <div class="summary-value">{{ item.score|default:"-" }}</div>
+            <div class="summary-sub">可能性 {{ item.probability|default:"-" }} × 影響 {{ item.impact|default:"-" }}</div>
+        </div>
+
+        <div class="summary-box">
+            <div class="summary-label">重要度</div>
+            <div class="summary-value" style="font-size: 18px;">{{ item.escalation_level|default:"-" }}</div>
+            <div class="summary-sub">CRITICAL / HIGH / MEDIUM / LOW</div>
+        </div>
+
+        <div class="summary-box">
+            <div class="summary-label">ステータス</div>
+            <div class="summary-value" style="font-size: 18px;">{{ item.status|default:"-" }}</div>
+            <div class="summary-sub">期限：{{ item.due_date|default:"-" }}</div>
+        </div>
+    </div>
+</div>
+
+<div class="card detail-section">
+    <h3>1. 基本情報</h3>
+
+    <table>
+        <tbody>
+            <tr>
+                <th>RAID ID</th>
+                <td>{{ item.raid_id|default:"-" }}</td>
+                <th>案件ID</th>
+                <td>
+                    {% if item.deal_id %}
+                        <a href="{% url 'deals:detail' item.deal_id %}">
+                            {{ item.deal_id }}
+                        </a>
+                    {% else %}
+                        -
+                    {% endif %}
+                </td>
+            </tr>
+            <tr>
+                <th>種別</th>
+                <td>{{ item.raid_type|default:"-" }}</td>
+                <th>ステータス</th>
+                <td>{{ item.status|default:"-" }}</td>
+            </tr>
+            <tr>
+                <th>Phase</th>
+                <td>{{ item.phase_id|default:"-" }}</td>
+                <th>Workstream</th>
+                <td>{{ item.workstream_id|default:"-" }}</td>
+            </tr>
+            <tr>
+                <th>タイトル</th>
+                <td colspan="3">{{ item.title|default:"-" }}</td>
+            </tr>
+            <tr>
+                <th>内容</th>
+                <td colspan="3">{{ item.description|default:"-" }}</td>
+            </tr>
+            <tr>
+                <th>担当者</th>
+                <td>{{ item.owner_user_id|default:"-" }}</td>
+                <th>期限</th>
+                <td>{{ item.due_date|default:"-" }}</td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+
+<div class="card detail-section">
+    <h3>2. 評価</h3>
+
+    <table>
+        <tbody>
+            <tr>
+                <th>発生可能性</th>
+                <td>{{ item.probability|default:"-" }}</td>
+                <th>影響度</th>
+                <td>{{ item.impact|default:"-" }}</td>
+            </tr>
+            <tr>
+                <th>スコア</th>
+                <td>{{ item.score|default:"-" }}</td>
+                <th>重要度</th>
+                <td>
+                    {% if item.escalation_level == "CRITICAL" or item.escalation_level == "HIGH" %}
+                        <span style="color: #dc2626; font-weight: 700;">{{ item.escalation_level }}</span>
+                    {% elif item.escalation_level == "MEDIUM" %}
+                        <span style="color: #ca8a04; font-weight: 700;">{{ item.escalation_level }}</span>
+                    {% else %}
+                        {{ item.escalation_level|default:"-" }}
+                    {% endif %}
+                </td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+
+<div class="card detail-section">
+    <h3>3. 対応策・発動条件</h3>
+
+    <table>
+        <tbody>
+            <tr>
+                <th>対応策・軽減策</th>
+                <td>{{ item.mitigation_plan|default:"-" }}</td>
+            </tr>
+            <tr>
+                <th>発動条件・注意条件</th>
+                <td>{{ item.trigger_condition|default:"-" }}</td>
+            </tr>
+            <tr>
+                <th>なぜ重要か</th>
+                <td>{{ item.why_it_matters|default:"-" }}</td>
+            </tr>
+            <tr>
+                <th>初心者向け説明</th>
+                <td>{{ item.beginner_guidance|default:"-" }}</td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+
+<div class="card detail-section">
+    <h3>4. 関連情報</h3>
+
+    <table>
+        <tbody>
+            <tr>
+                <th>関連タスクID</th>
+                <td>{{ item.related_task_id|default:"-" }}</td>
+                <th>関連意思決定ID</th>
+                <td>{{ item.related_decision_id|default:"-" }}</td>
+            </tr>
+            <tr>
+                <th>証跡文書ID</th>
+                <td>{{ item.evidence_document_id|default:"-" }}</td>
+                <th>作成日</th>
+                <td>{{ item.created_at|default:"-" }}</td>
+            </tr>
+            <tr>
+                <th>オープン日</th>
+                <td>{{ item.opened_date|default:"-" }}</td>
+                <th>クローズ日</th>
+                <td>{{ item.closed_date|default:"-" }}</td>
+            </tr>
+            <tr>
+                <th>更新日</th>
+                <td colspan="3">{{ item.updated_at|default:"-" }}</td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+{% endblock %}

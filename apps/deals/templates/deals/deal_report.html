@@ -86,6 +86,11 @@
             <div class="summary-value">{{ report_summary.decision_count }}</div>
             <div class="summary-sub">DECIDED {{ report_summary.decided_decision_count }}</div>
         </div>
+        <div class="summary-box">
+            <div class="summary-label">依存未解消</div>
+            <div class="summary-value">{{ report_summary.blocked_task_count }}</div>
+            <div class="summary-sub">前提タスク未完了</div>
+        </div>
     </div>
 </div>
 
@@ -173,6 +178,11 @@
                 <td>注意KPI</td>
                 <td>{{ report_summary.attention_kpi_count }}</td>
                 <td>RED / YELLOW のKPIについて、原因と対応策を確認してください。</td>
+            </tr>
+            <tr>
+                <td>依存未解消タスク</td>
+                <td>{{ report_summary.blocked_task_count }}</td>
+                <td>前提タスクが完了していないため、後続タスクが止まっていないか確認してください。</td>
             </tr>
         </tbody>
     </table>
@@ -388,6 +398,53 @@
 </div>
 
 <div class="card detail-section">
+    <h3>依存未解消タスク</h3>
+
+    {% if blocked_tasks %}
+        <table>
+            <thead>
+                <tr>
+                    <th>タスクID</th>
+                    <th>フェーズ</th>
+                    <th>WS</th>
+                    <th>タスク名</th>
+                    <th>優先度</th>
+                    <th>状態</th>
+                    <th>担当者</th>
+                    <th>期限</th>
+                    <th>未完了依存</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for task in blocked_tasks %}
+                    <tr>
+                        <td>
+                            <a href="{% url 'tasks:detail' task.task_id %}">
+                                {{ task.task_id }}
+                            </a>
+                        </td>
+                        <td>{{ task.phase_id|default:"-" }}</td>
+                        <td>{{ task.workstream_id|default:"-" }}</td>
+                        <td>{{ task.title|default:"-" }}</td>
+                        <td>{{ task.priority|default:"-" }}</td>
+                        <td>{{ task.status|default:"-" }}</td>
+                        <td>{{ task.owner_user_id|default:"-" }}</td>
+                        <td>{{ task.due_date|default:"-" }}</td>
+                        <td>
+                            <span style="color: #dc2626; font-weight: 700;">
+                                {{ task.blocking_dependency_count }}
+                            </span>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <div class="empty">依存未解消タスクはありません。</div>
+    {% endif %}
+</div>
+
+<div class="card detail-section">
     <h3>7. 期限超過タスク</h3>
 
     {% if overdue_tasks %}
@@ -423,6 +480,7 @@
         <div class="empty">期限超過タスクはありません。</div>
     {% endif %}
 </div>
+
 
 <div class="card detail-section">
     <h3>8. 証跡未添付タスク</h3>

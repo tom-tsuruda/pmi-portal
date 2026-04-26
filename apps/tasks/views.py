@@ -53,7 +53,9 @@ def _build_deal_choices(include_empty: bool = False) -> list[tuple[str, str]]:
 
 def _task_initial(task: dict) -> dict:
     initial = task.copy()
+
     initial["regulation_flag"] = str(initial.get("regulation_flag") or "0") == "1"
+
     return initial
 
 
@@ -68,6 +70,7 @@ def _task_dto_from_cleaned(cleaned: dict) -> TaskCreateDTO:
         owner_user_id=cleaned.get("owner_user_id") or "",
         due_date=cleaned.get("due_date") or "",
         template_source_id=cleaned.get("template_source_id") or "",
+        dependency_task_ids=cleaned.get("dependency_task_ids") or "",
         regulation_flag=1 if cleaned.get("regulation_flag") else 0,
         why_this_task=cleaned.get("why_this_task") or "",
         beginner_guidance=cleaned.get("beginner_guidance") or "",
@@ -175,6 +178,70 @@ def task_create(request):
         {
             "form": form,
             "deal_id": initial_deal_id,
+        },
+    )
+
+
+def task_detail(request, task_id: str):
+    try:
+        task = task_service.get_task(task_id)
+
+        related_templates = document_service.find_related_templates_for_task(
+            task=task,
+            templates=document_service.list_templates(),
+            limit=10,
+        )
+
+        related_documents = []
+
+        if task.get("deal_id"):
+            documents = document_service.list_documents(deal_id=task.get("deal_id"))
+
+            for document in documents:
+                if str(document.get("linked_task_id") or "") == str(task_id):
+                    related_documents.append(document)
+
+                elif str(document.get("document_id") or "") == str(task.get("related_document_id") or ""):
+                    related_documents.append(document)
+
+        seen_document_ids = set()
+        unique_related_documents = []
+
+        for document in related_documents:
+            document_id = str(document.get("document_id") or "")
+
+            if not document_id:
+                continue
+
+            if document_id in seen_document_ids:
+                continue
+
+            seen_document_ids.add(document_id)
+            unique_related_documents.append(document)
+
+        predecessor_tasks = task_service.get_predecessor_tasks(task)
+        blocking_predecessor_tasks = task_service.get_blocking_predecessor_tasks(task)
+        dependent_tasks = task_service.list_dependent_tasks(task_id)
+
+    except RecordNotFoundError:
+        messages.error(request, f"タスクが見つかりません: {task_id}")
+        return redirect("tasks:list")
+
+    except RepositoryError as e:
+        messages.error(request, str(e))
+        return redirect("tasks:list")
+
+    return render(
+        request,
+        "tasks/task_detail.html",
+        {
+            "task": task,
+            "task_id": task_id,
+            "related_templates": related_templates,
+            "related_documents": unique_related_documents,
+            "predecessor_tasks": predecessor_tasks,
+            "blocking_predecessor_tasks": blocking_predecessor_tasks,
+            "dependent_tasks": dependent_tasks,
         },
     )
 

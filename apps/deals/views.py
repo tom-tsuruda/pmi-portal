@@ -286,6 +286,8 @@ def deal_report(request, deal_id: str):
         if str(task.get("status") or "") == "DONE"
     ]
 
+    blocked_tasks = task_service.list_blocked_tasks(deal_id=deal_id)
+
     incomplete_tasks = [
         task for task in active_tasks
         if str(task.get("status") or "") not in ["DONE", "CANCELLED"]
@@ -379,6 +381,7 @@ def deal_report(request, deal_id: str):
         "attention_kpi_count": len(attention_kpis),
         "overall_status": overall_status,
         "overall_comment": overall_comment,
+        "blocked_task_count": len(blocked_tasks),
     }
 
     return render(
@@ -407,6 +410,7 @@ def deal_report(request, deal_id: str):
             "report_summary": report_summary,
             "synergy_summary": synergy_summary,
             "kpi_summary": kpi_summary,
+            "blocked_tasks": blocked_tasks,
         },
     )
 

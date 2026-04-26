@@ -1,0 +1,352 @@
+{% extends "base.html" %}
+
+{% block title %}タスク詳細 | PMI Portal{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="page-header">
+        <div>
+            <div style="margin-bottom: 12px;">
+                <a href="{% url 'tasks:list' %}">タスク一覧</a>
+                <span style="color: #6b7280;"> / タスク詳細</span>
+            </div>
+
+            <h2>{{ task.title|default:"タスク詳細" }}</h2>
+
+            <p style="margin: 6px 0 0; color: #6b7280;">
+                {{ task.task_id|default:"-" }} / {{ task.deal_id|default:"-" }} / {{ task.phase_id|default:"-" }} / {{ task.workstream_id|default:"-" }}
+            </p>
+        </div>
+
+        <div class="no-print" style="display: flex; gap: 8px; flex-wrap: wrap;">
+            {% if task.deal_id %}
+                <a class="button-secondary" href="{% url 'deals:detail' task.deal_id %}">
+                    案件詳細へ
+                </a>
+            {% endif %}
+
+            <a class="button-secondary" href="{% url 'tasks:edit' task.task_id %}">
+                編集
+            </a>
+
+            <a class="button-secondary" href="{% url 'tasks:related_templates' task.task_id %}">
+                関連テンプレート
+            </a>
+
+            <a class="button" href="{% url 'documents:upload' %}?deal_id={{ task.deal_id }}&task_id={{ task.task_id }}">
+                証跡追加
+            </a>
+        </div>
+    </div>
+
+    <div style="background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 10px; padding: 14px; margin-bottom: 18px;">
+        <strong>このタスクの確認ポイント：</strong>
+        <span style="color: #4b5563;">
+            目的、担当者、期限、証跡状態を確認します。完了にする前に、必要な証跡が添付されているか確認してください。
+        </span>
+    </div>
+
+    <div class="summary-grid">
+        <div class="summary-box">
+            <div class="summary-label">ステータス</div>
+            <div class="summary-value" style="font-size: 18px;">{{ task.status|default:"-" }}</div>
+            <div class="summary-sub">現在の進捗状態</div>
+        </div>
+
+        <div class="summary-box">
+            <div class="summary-label">優先度</div>
+            <div class="summary-value" style="font-size: 18px;">{{ task.priority|default:"-" }}</div>
+            <div class="summary-sub">HIGH / MEDIUM / LOW</div>
+        </div>
+
+        <div class="summary-box">
+            <div class="summary-label">証跡</div>
+            <div class="summary-value" style="font-size: 18px;">
+                {% if task.evidence_status == "ATTACHED" %}
+                    添付済
+                {% else %}
+                    未添付
+                {% endif %}
+            </div>
+            <div class="summary-sub">{{ task.evidence_status|default:"REQUIRED" }}</div>
+        </div>
+
+        <div class="summary-box">
+            <div class="summary-label">期限</div>
+            <div class="summary-value" style="font-size: 18px;">{{ task.due_date|default:"-" }}</div>
+            <div class="summary-sub">担当：{{ task.owner_user_id|default:"-" }}</div>
+        </div>
+    </div>
+</div>
+
+<div class="card detail-section">
+    <h3>1. 基本情報</h3>
+
+    <table>
+        <tbody>
+            <tr>
+                <th>タスクID</th>
+                <td>{{ task.task_id|default:"-" }}</td>
+                <th>案件ID</th>
+                <td>
+                    {% if task.deal_id %}
+                        <a href="{% url 'deals:detail' task.deal_id %}">
+                            {{ task.deal_id }}
+                        </a>
+                    {% else %}
+                        -
+                    {% endif %}
+                </td>
+            </tr>
+            <tr>
+                <th>Phase</th>
+                <td>{{ task.phase_id|default:"-" }}</td>
+                <th>Workstream</th>
+                <td>{{ task.workstream_id|default:"-" }}</td>
+            </tr>
+            <tr>
+                <th>タスク名</th>
+                <td colspan="3">{{ task.title|default:"-" }}</td>
+            </tr>
+            <tr>
+                <th>説明</th>
+                <td colspan="3">{{ task.description|default:"-" }}</td>
+            </tr>
+            <tr>
+                <th>担当者</th>
+                <td>{{ task.owner_user_id|default:"-" }}</td>
+                <th>期限</th>
+                <td>{{ task.due_date|default:"-" }}</td>
+            </tr>
+            <tr>
+                <th>開始日</th>
+                <td>{{ task.start_date|default:"-" }}</td>
+                <th>完了日</th>
+                <td>{{ task.completed_date|default:"-" }}</td>
+            </tr>
+            <tr>
+                <th>タスク種別</th>
+                <td>{{ task.task_type|default:"-" }}</td>
+                <th>テンプレート元</th>
+                <td>{{ task.template_source_id|default:"-" }}</td>
+            </tr>
+            <tr>
+                <th>規制対応</th>
+                <td>{{ task.regulation_flag|default:"0" }}</td>
+                <th>重要パス</th>
+                <td>{{ task.critical_path_flag|default:"0" }}</td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+
+<div class="card detail-section">
+    <h3>3. 依存関係</h3>
+
+    <div style="background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 10px; padding: 14px; margin-bottom: 18px;">
+        <strong>依存関係の見方：</strong>
+        <span style="color: #4b5563;">
+            前提タスクが完了していない場合、このタスクはブロック中として扱います。
+            たとえば「承認が終わらないと通知できない」「ITアクセスがないと作業できない」といった関係を表します。
+        </span>
+    </div>
+
+    <h4>前提タスク</h4>
+
+    {% if predecessor_tasks %}
+        <table>
+            <thead>
+                <tr>
+                    <th>タスクID</th>
+                    <th>タスク名</th>
+                    <th>Phase</th>
+                    <th>WS</th>
+                    <th>状態</th>
+                    <th>期限</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in predecessor_tasks %}
+                    <tr>
+                        <td>
+                            {% if item.status != "MISSING" %}
+                                <a href="{% url 'tasks:detail' item.task_id %}">
+                                    {{ item.task_id }}
+                                </a>
+                            {% else %}
+                                {{ item.task_id }}
+                            {% endif %}
+                        </td>
+                        <td>{{ item.title|default:"-" }}</td>
+                        <td>{{ item.phase_id|default:"-" }}</td>
+                        <td>{{ item.workstream_id|default:"-" }}</td>
+                        <td>
+                            {% if item.status == "DONE" %}
+                                <span style="color: #166534; font-weight: 700;">DONE</span>
+                            {% elif item.status == "MISSING" %}
+                                <span style="color: #dc2626; font-weight: 700;">ID不明</span>
+                            {% else %}
+                                <span style="color: #dc2626; font-weight: 700;">
+                                    {{ item.status|default:"未完了" }}
+                                </span>
+                            {% endif %}
+                        </td>
+                        <td>{{ item.due_date|default:"-" }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <div class="empty">前提タスクは登録されていません。</div>
+    {% endif %}
+
+    <h4 style="margin-top: 22px;">このタスクを前提にしているタスク</h4>
+
+    {% if dependent_tasks %}
+        <table>
+            <thead>
+                <tr>
+                    <th>タスクID</th>
+                    <th>タスク名</th>
+                    <th>Phase</th>
+                    <th>WS</th>
+                    <th>状態</th>
+                    <th>期限</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in dependent_tasks %}
+                    <tr>
+                        <td>
+                            <a href="{% url 'tasks:detail' item.task_id %}">
+                                {{ item.task_id }}
+                            </a>
+                        </td>
+                        <td>{{ item.title|default:"-" }}</td>
+                        <td>{{ item.phase_id|default:"-" }}</td>
+                        <td>{{ item.workstream_id|default:"-" }}</td>
+                        <td>
+                            {% if item.is_dependency_blocked %}
+                                <span style="color: #dc2626; font-weight: 700;">ブロック中</span>
+                            {% else %}
+                                {{ item.status|default:"-" }}
+                            {% endif %}
+                        </td>
+                        <td>{{ item.due_date|default:"-" }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <div class="empty">このタスクを前提にしている後続タスクはありません。</div>
+    {% endif %}
+</div>
+
+<div class="card detail-section">
+    <h3>2. 初心者向け説明・完了条件</h3>
+
+    <table>
+        <tbody>
+            <tr>
+                <th>なぜ必要か</th>
+                <td>{{ task.why_this_task|default:"-" }}</td>
+            </tr>
+            <tr>
+                <th>初心者向け説明</th>
+                <td>{{ task.beginner_guidance|default:"-" }}</td>
+            </tr>
+            <tr>
+                <th>完了・更新メモ</th>
+                <td>{{ task.completion_note|default:"-" }}</td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+
+<div class="card detail-section">
+    <div class="page-header">
+        <div>
+            <h3>3. 関連ドキュメント・証跡</h3>
+        </div>
+        <a class="button-secondary no-print" href="{% url 'documents:upload' %}?deal_id={{ task.deal_id }}&task_id={{ task.task_id }}">
+            証跡追加
+        </a>
+    </div>
+
+    {% if related_documents %}
+        <table>
+            <thead>
+                <tr>
+                    <th>資料ID</th>
+                    <th>タイトル</th>
+                    <th>種別</th>
+                    <th>ファイル名</th>
+                    <th>証跡</th>
+                    <th class="no-print">表示</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for doc in related_documents %}
+                    <tr>
+                        <td>{{ doc.document_id|default:"-" }}</td>
+                        <td>{{ doc.document_title|default:"-" }}</td>
+                        <td>{{ doc.document_type|default:"-" }}</td>
+                        <td>{{ doc.file_name|default:"-" }}</td>
+                        <td>
+                            {% if doc.is_evidence_flag == 1 or doc.is_evidence_flag == "1" %}
+                                証跡
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                        <td class="no-print">
+                            <a class="button-secondary" href="{% url 'documents:download' doc.document_id %}" target="_blank">
+                                開く
+                            </a>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <div class="empty">このタスクに紐づくドキュメントはまだありません。</div>
+    {% endif %}
+</div>
+
+<div class="card detail-section">
+    <h3>4. 関連テンプレート候補</h3>
+
+    {% if related_templates %}
+        <table>
+            <thead>
+                <tr>
+                    <th>テンプレートID</th>
+                    <th>Phase</th>
+                    <th>WS</th>
+                    <th>テンプレート名</th>
+                    <th>タグ</th>
+                    <th class="no-print">表示</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for template in related_templates %}
+                    <tr>
+                        <td>{{ template.document_id|default:"-" }}</td>
+                        <td>{{ template.phase_id|default:"-" }}</td>
+                        <td>{{ template.workstream_id|default:"-" }}</td>
+                        <td>{{ template.document_title|default:"-" }}</td>
+                        <td>{{ template.tags|default:"-" }}</td>
+                        <td class="no-print">
+                            <a class="button-secondary" href="{% url 'documents:download' template.document_id %}" target="_blank">
+                                開く
+                            </a>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <div class="empty">関連テンプレート候補はありません。</div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -12,6 +12,7 @@ class TaskCreateDTO:
     owner_user_id: str = ""
     due_date: str = ""
     template_source_id: str = ""
+    dependency_task_ids: str = ""
     evidence_required_flag: int = 0
     regulation_flag: int = 0
     why_this_task: str = ""

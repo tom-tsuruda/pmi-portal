@@ -92,12 +92,20 @@
             <tbody>
                 {% for item in items %}
                     <tr>
-                        <td>{{ item.raid_id }}</td>
+                        <td>
+                            <a href="{% url 'raid:detail' item.raid_id %}">
+                                {{ item.raid_id }}
+                            </a>
+                        </td>
                         <td>{{ item.deal_id }}</td>
                         <td>{{ item.raid_type }}</td>
                         <td>{{ item.phase_id }}</td>
                         <td>{{ item.workstream_id }}</td>
-                        <td>{{ item.title }}</td>
+                        <td>
+                            <a href="{% url 'raid:detail' item.raid_id %}" style="font-weight: 700;">
+                                {{ item.title|default:"-" }}
+                            </a>
+                        </td>
                         <td>{{ item.probability }}</td>
                         <td>{{ item.impact }}</td>
                         <td>{{ item.score }}</td>

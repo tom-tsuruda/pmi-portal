@@ -141,6 +141,26 @@ def raid_create(request):
         },
     )
 
+def raid_detail(request, raid_id: str):
+    try:
+        item = raid_service.get_item(raid_id)
+
+    except RecordNotFoundError:
+        messages.error(request, f"RAID項目が見つかりません: {raid_id}")
+        return redirect("raid:list")
+
+    except RepositoryError as e:
+        messages.error(request, str(e))
+        return redirect("raid:list")
+
+    return render(
+        request,
+        "raid/raid_detail.html",
+        {
+            "item": item,
+            "raid_id": raid_id,
+        },
+    )
 
 def raid_edit(request, raid_id: str):
     deal_choices = _build_deal_choices(include_empty=False)

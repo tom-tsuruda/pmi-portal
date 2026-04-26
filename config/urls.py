@@ -15,4 +15,5 @@ urlpatterns = [
     path("audit/", include("apps.audit.urls")),
     path("synergies/", include("apps.synergies.urls")),
     path("kpis/", include("apps.kpis.urls")),
-]
+    path("backups/", include("apps.backups.urls")),
+]       

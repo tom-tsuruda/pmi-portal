@@ -79,6 +79,7 @@
                     <th>タスク名</th>
                     <th>優先度</th>
                     <th>ステータス</th>
+                    <th>依存</th>
                     <th>証跡</th>
                     <th>テンプレート</th>
                     <th>担当者</th>
@@ -92,7 +93,11 @@
             <tbody>
                 {% for task in tasks %}
                     <tr>
-                        <td>{{ task.task_id }}</td>
+                        <td>
+                            <a href="{% url 'tasks:detail' task.task_id %}">
+                                {{ task.task_id }}
+                            </a>
+                        </td>
 
                         <td>
                             {% if task.deal_id %}
@@ -108,14 +113,16 @@
                         <td>{{ task.workstream_id|default:"-" }}</td>
 
                         <td>
-                            <strong>{{ task.title|default:"-" }}</strong>
-
+                            <a href="{% url 'tasks:detail' task.task_id %}" style="font-weight: 700;">
+                                {{ task.title|default:"-" }}
+                            </a>
+                        
                             {% if task.description %}
                                 <div style="color: #6b7280; font-size: 11.5px; margin-top: 4px;">
                                     {{ task.description }}
                                 </div>
                             {% endif %}
-
+                        
                             {% if task.beginner_guidance %}
                                 <div style="color: #2563eb; font-size: 11.5px; margin-top: 4px;">
                                     {{ task.beginner_guidance }}
@@ -167,7 +174,21 @@
                                 </button>
                             </form>
                         </td>
-
+                        <td>
+                            {% if task.is_dependency_blocked %}
+                                <span style="color: #dc2626; font-weight: 700;">ブロック中</span>
+                                <div style="color: #6b7280; font-size: 11.5px; margin-top: 4px;">
+                                    未完了依存 {{ task.blocking_dependency_count }} 件
+                                </div>
+                            {% elif task.dependency_count %}
+                                <span style="color: #ca8a04; font-weight: 700;">依存あり</span>
+                                <div style="color: #6b7280; font-size: 11.5px; margin-top: 4px;">
+                                    依存 {{ task.dependency_count }} 件
+                                </div>
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
                         <td>
                             <a class="button-secondary" href="{% url 'documents:upload' %}?deal_id={{ task.deal_id }}&task_id={{ task.task_id }}">
                                 証跡追加
