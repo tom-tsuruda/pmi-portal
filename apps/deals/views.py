@@ -52,8 +52,11 @@ def deal_create(request):
 
             try:
                 deal_id = deal_service.create_deal(dto)
-                messages.success(request, f"案件を登録しました: {deal_id}")
-                return redirect("deals:detail", deal_id=deal_id)
+                messages.success(
+                request,
+                f"案件を登録しました: {deal_id}。続いて質問票に回答し、初期タスクを自動生成してください。"
+                )
+                return redirect("questionnaire:start", deal_id=deal_id)
             except RepositoryError as e:
                 messages.error(request, str(e))
     else:

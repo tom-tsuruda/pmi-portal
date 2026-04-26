@@ -2,11 +2,10 @@ from django import forms
 
 
 class RaidCreateForm(forms.Form):
-    deal_id = forms.CharField(
-        label="案件ID",
-        max_length=100,
+    deal_id = forms.ChoiceField(
+        label="案件",
         required=True,
-        widget=forms.TextInput(attrs={"placeholder": "例：DEAL-000001"}),
+        choices=[],
     )
 
     raid_type = forms.ChoiceField(
@@ -128,6 +127,13 @@ class RaidCreateForm(forms.Form):
         ),
     )
 
+    def __init__(self, *args, deal_choices=None, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.fields["deal_id"].choices = deal_choices or [
+            ("", "案件がありません。先に案件を登録してください。")
+        ]
+
 
 class RaidFilterForm(forms.Form):
     keyword = forms.CharField(
@@ -140,14 +146,10 @@ class RaidFilterForm(forms.Form):
         ),
     )
 
-    deal_id = forms.CharField(
-        label="案件ID",
+    deal_id = forms.ChoiceField(
+        label="案件",
         required=False,
-        widget=forms.TextInput(
-            attrs={
-                "placeholder": "例：DEAL-000001",
-            }
-        ),
+        choices=[],
     )
 
     raid_type = forms.ChoiceField(
@@ -231,3 +233,8 @@ class RaidFilterForm(forms.Form):
         required=False,
         initial=False,
     )
+
+    def __init__(self, *args, deal_choices=None, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.fields["deal_id"].choices = deal_choices or [("", "すべて")]

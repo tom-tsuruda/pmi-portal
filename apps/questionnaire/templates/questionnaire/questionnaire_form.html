@@ -6,25 +6,60 @@
 <div class="card">
     <div class="page-header">
         <div>
-            <h2>質問票</h2>
+            <h2>質問票・タスク自動生成</h2>
             <p style="margin: 6px 0 0; color: #6b7280;">
                 案件ID：{{ deal_id }}
             </p>
         </div>
-        <a class="button-secondary" href="{% url 'deals:detail' deal_id %}">案件詳細へ戻る</a>
+
+        <a class="button-secondary" href="{% url 'deals:detail' deal_id %}">
+            案件詳細へ戻る
+        </a>
     </div>
 
-    <p style="color: #4b5563; margin-bottom: 24px;">
-        以下の質問に回答すると、PMIで必要になりやすい初期タスクを自動生成します。
-    </p>
+    <div style="background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 12px; padding: 16px; margin-bottom: 24px;">
+        <h3 style="margin-top: 0;">この質問票の目的</h3>
+        <p style="color: #4b5563; line-height: 1.8; margin-bottom: 0;">
+            この質問票に回答すると、PMIで必要になりやすい初期タスクを自動生成します。
+            たとえば、TSA、個人情報、海外拠点、規制業種、IT統合、従業員説明などの有無に応じて、
+            Day1・Day100に必要なタスクを追加します。
+        </p>
+    </div>
 
     <form method="post">
         {% csrf_token %}
 
-        {{ form.as_p }}
+        {% for field in form %}
+            <div style="background: white; border: 1px solid #e5e7eb; border-radius: 12px; padding: 16px; margin-bottom: 14px;">
+                <label for="{{ field.id_for_label }}" style="font-weight: 700;">
+                    {{ forloop.counter }}. {{ field.label }}
+                </label>
+
+                <div style="margin-top: 8px;">
+                    {{ field }}
+                </div>
+
+                {% if field.help_text %}
+                    <div style="color: #6b7280; font-size: 13px; line-height: 1.6; margin-top: 8px;">
+                        {{ field.help_text }}
+                    </div>
+                {% endif %}
+
+                {% if field.errors %}
+                    <div style="color: #dc2626; margin-top: 8px;">
+                        {{ field.errors }}
+                    </div>
+                {% endif %}
+            </div>
+        {% endfor %}
 
         <div class="form-actions">
-            <button class="button" type="submit">回答を保存してタスク生成</button>
+            <button class="button" type="submit">
+                回答を保存してタスク生成
+            </button>
+            <a class="button-secondary" href="{% url 'deals:detail' deal_id %}">
+                キャンセル
+            </a>
         </div>
     </form>
 </div>

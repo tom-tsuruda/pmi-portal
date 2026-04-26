@@ -1,299 +1,475 @@
 {% extends "base.html" %}
 
+{% block title %}案件詳細 | PMI Portal{% endblock %}
+
 {% block content %}
 
-<div class="page-header">
-  <div>
-    <p class="breadcrumb">
-      <a href="{% url 'deals:list' %}">案件一覧</a> / 案件詳細
+<div class="card">
+    <div class="page-header">
+        <div>
+            <div style="margin-bottom: 12px;">
+                <a href="{% url 'deals:list' %}">案件一覧</a>
+                <span style="color: #6b7280;"> / 案件詳細</span>
+            </div>
+
+            <h2 style="margin-bottom: 8px;">{{ deal.deal_name|default:"案件詳細" }}</h2>
+
+            <div style="color: #6b7280; line-height: 1.7;">
+                案件ID：{{ deal.deal_id|default:"-" }}
+                / 対象会社：{{ deal.target_company_name|default:"-" }}
+                / Deal Type：{{ deal.deal_type|default:"-" }}
+                / 地域：{{ deal.region_main|default:"-" }}
+            </div>
+        </div>
+
+        <div class="no-print" style="display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end;">
+            <a class="button-secondary" href="{% url 'deals:report' deal.deal_id %}">
+                レポート表示
+            </a>
+            <a class="button-secondary" href="{% url 'tasks:create' %}?deal_id={{ deal.deal_id }}">
+                タスク追加
+            </a>
+            <a class="button-secondary" href="{% url 'raid:create' %}?deal_id={{ deal.deal_id }}">
+                RAID追加
+            </a>
+            <a class="button-secondary" href="{% url 'documents:upload' %}?deal_id={{ deal.deal_id }}">
+                文書追加
+            </a>
+            <a class="button" href="{% url 'questionnaire:start' deal.deal_id %}">
+                質問票・タスク自動生成
+            </a>
+        </div>
+    </div>
+
+    <div style="background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 12px; padding: 16px; margin-bottom: 20px;">
+        <h3 style="margin-top: 0; margin-bottom: 8px;">この画面の見方</h3>
+        <p style="margin: 0; color: #4b5563; line-height: 1.8;">
+            この画面は、1つのPMI案件に紐づくタスク、RAID、意思決定、承認、ドキュメントをまとめて見るための画面です。
+            PMIでは、個別作業だけでなく「未完了タスク」「未解決リスク」「未承認事項」「証跡の有無」を同時に確認することが重要です。
+        </p>
+    </div>
+
+    <div class="summary-grid">
+        <div class="summary-box">
+            <div class="summary-label">タスク進捗</div>
+            <div class="summary-value">{{ task_progress }}%</div>
+            <div class="summary-sub">{{ task_done }} / {{ task_total }} 完了</div>
+        </div>
+
+        <div class="summary-box">
+            <div class="summary-label">未解決RAID</div>
+            <div class="summary-value">{{ open_raid_count }}</div>
+            <div class="summary-sub">OPEN / IN_PROGRESS / WATCH</div>
+        </div>
+
+        <div class="summary-box">
+            <div class="summary-label">重要RAID</div>
+            <div class="summary-value">{{ high_raid_count }}</div>
+            <div class="summary-sub">HIGH / CRITICAL</div>
+        </div>
+
+        <div class="summary-box">
+            <div class="summary-label">意思決定</div>
+            <div class="summary-value">{{ decisions|length }}</div>
+            <div class="summary-sub">Decision Log</div>
+        </div>
+
+        <div class="summary-box">
+            <div class="summary-label">承認</div>
+            <div class="summary-value">{{ approvals|length }}</div>
+            <div class="summary-sub">Approval Items</div>
+        </div>
+
+        <div class="summary-box">
+            <div class="summary-label">関連文書</div>
+            <div class="summary-value">{{ documents|length }}</div>
+            <div class="summary-sub">Evidence / Template / Report</div>
+        </div>
+    </div>
+</div>
+
+<div class="detail-section card">
+    <div class="page-header">
+        <h2>案件基本情報</h2>
+        <span style="color: #6b7280;">{{ deal.deal_status|default:"-" }}</span>
+    </div>
+
+    <table>
+        <tbody>
+            <tr>
+                <th style="width: 180px;">案件ID</th>
+                <td>{{ deal.deal_id|default:"-" }}</td>
+                <th style="width: 180px;">案件コード</th>
+                <td>{{ deal.deal_code|default:"-" }}</td>
+            </tr>
+            <tr>
+                <th>案件名</th>
+                <td>{{ deal.deal_name|default:"-" }}</td>
+                <th>対象会社</th>
+                <td>{{ deal.target_company_name|default:"-" }}</td>
+            </tr>
+            <tr>
+                <th>Deal Type</th>
+                <td>{{ deal.deal_type|default:"-" }}</td>
+                <th>地域</th>
+                <td>{{ deal.region_main|default:"-" }}</td>
+            </tr>
+            <tr>
+                <th>Owner</th>
+                <td>{{ deal.owner_user_id|default:"-" }}</td>
+                <th>ステータス</th>
+                <td>{{ deal.deal_status|default:"-" }}</td>
+            </tr>
+            <tr>
+                <th>作成日</th>
+                <td>{{ deal.created_at|default:"-" }}</td>
+                <th>更新日</th>
+                <td>{{ deal.updated_at|default:"-" }}</td>
+            </tr>
+            <tr>
+                <th>説明</th>
+                <td colspan="3">{{ deal.description|default:"-" }}</td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+
+<div class="detail-section card no-print">
+    <div class="page-header">
+        <h2>案件ステータス更新</h2>
+    </div>
+
+    <p style="color: #6b7280; margin-top: 0;">
+        案件全体の状態を更新します。例：DRAFT、ACTIVE、ON_HOLD、CLOSED など。
     </p>
 
-    {% if deal %}
-      <h1>{{ deal.deal_name|default:deal_id }}</h1>
-      <p>
-        対象会社：{{ deal.target_company_name|default:"-" }}
-        / Deal Type：{{ deal.deal_type|default:"-" }}
-        / 地域：{{ deal.region_main|default:"-" }}
-      </p>
-    {% else %}
-      <h1>案件が見つかりません</h1>
-      <p>指定された案件ID：{{ deal_id }}</p>
-    {% endif %}
-  </div>
+    <form method="post" action="{% url 'deals:update_status' deal.deal_id %}">
+        {% csrf_token %}
+
+        <div style="max-width: 360px;">
+            {{ status_form.deal_status.label_tag }}
+            {{ status_form.deal_status }}
+            {% if status_form.deal_status.errors %}
+                <div style="color: #dc2626; margin-top: 6px;">
+                    {{ status_form.deal_status.errors }}
+                </div>
+            {% endif %}
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="button">
+                ステータス更新
+            </button>
+        </div>
+    </form>
+
+    <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 24px 0;">
+
+    <div>
+        <h3>案件の停止・再開</h3>
+        <p style="color: #6b7280;">
+            アーカイブすると案件一覧や通常運用から外す用途に使えます。必要に応じて再開できます。
+        </p>
+
+        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+            <form method="post" action="{% url 'deals:archive' deal.deal_id %}">
+                {% csrf_token %}
+                <button type="submit" class="button-danger">
+                    アーカイブ
+                </button>
+            </form>
+
+            <form method="post" action="{% url 'deals:reactivate' deal.deal_id %}">
+                {% csrf_token %}
+                <button type="submit" class="button-secondary">
+                    再開
+                </button>
+            </form>
+        </div>
+    </div>
 </div>
 
-{% if deal %}
+<div class="detail-section card">
+    <div class="page-header">
+        <div>
+            <h2>タスク一覧</h2>
+            <div style="color: #6b7280;">PMIで実行すべき具体的な作業です。期限、担当、ステータスを中心に確認します。</div>
+        </div>
 
-<div class="guidance-box">
-  <h2>この画面の見方</h2>
-  <p>
-    この画面では、1つのPMI案件に紐づくタスク、RAID、関連ドキュメントをまとめて確認します。
-    PMIでは「フェーズ別」と「ワークストリーム別」の両方で状況を把握することが重要です。
-  </p>
-</div>
+        <a class="button-secondary no-print" href="{% url 'tasks:create' %}?deal_id={{ deal.deal_id }}">
+            タスク追加
+        </a>
+    </div>
 
-<div class="summary-grid">
-  <div class="summary-card">
-    <div class="summary-label">タスク総数</div>
-    <div class="summary-value">{{ summary.task_count }}</div>
-  </div>
-
-  <div class="summary-card warning">
-    <div class="summary-label">未完了タスク</div>
-    <div class="summary-value">{{ summary.open_task_count }}</div>
-  </div>
-
-  <div class="summary-card">
-    <div class="summary-label">RAID総数</div>
-    <div class="summary-value">{{ summary.raid_count }}</div>
-  </div>
-
-  <div class="summary-card danger">
-    <div class="summary-label">重要RAID</div>
-    <div class="summary-value">{{ summary.important_raid_count }}</div>
-  </div>
-
-  <div class="summary-card">
-    <div class="summary-label">関連文書</div>
-    <div class="summary-value">{{ summary.document_count }}</div>
-  </div>
-</div>
-
-<div class="section-grid">
-
-  <section class="card">
-    <h2>案件基本情報</h2>
-    <dl class="detail-list">
-      <dt>案件ID</dt>
-      <dd>{{ deal.deal_id|default:"-" }}</dd>
-
-      <dt>案件コード</dt>
-      <dd>{{ deal.deal_code|default:"-" }}</dd>
-
-      <dt>案件名</dt>
-      <dd>{{ deal.deal_name|default:"-" }}</dd>
-
-      <dt>対象会社</dt>
-      <dd>{{ deal.target_company_name|default:"-" }}</dd>
-
-      <dt>Deal Type</dt>
-      <dd>{{ deal.deal_type|default:"-" }}</dd>
-
-      <dt>地域</dt>
-      <dd>{{ deal.region_main|default:"-" }}</dd>
-
-      <dt>Owner</dt>
-      <dd>{{ deal.owner_user_id|default:"-" }}</dd>
-
-      <dt>説明</dt>
-      <dd>{{ deal.description|default:"-" }}</dd>
-    </dl>
-  </section>
-
-  <section class="card">
-    <h2>フェーズ別タスク数</h2>
-    {% if phase_counts %}
-      <table class="table compact">
+    <table>
         <thead>
-          <tr>
-            <th>フェーズ</th>
-            <th>件数</th>
-          </tr>
+            <tr>
+                <th>タスクID</th>
+                <th>フェーズ</th>
+                <th>ワークストリーム</th>
+                <th>タイトル</th>
+                <th>優先度</th>
+                <th>期限</th>
+                <th>担当</th>
+                <th>ステータス</th>
+            </tr>
         </thead>
         <tbody>
-          {% for phase, count in phase_counts.items %}
-          <tr>
-            <td>{{ phase }}</td>
-            <td>{{ count }}</td>
-          </tr>
-          {% endfor %}
+            {% for task in tasks %}
+                <tr>
+                    <td>{{ task.task_id|default:"-" }}</td>
+                    <td>{{ task.phase_id|default:"-" }}</td>
+                    <td>{{ task.workstream_id|default:"-" }}</td>
+                    <td>
+                        <strong>{{ task.title|default:"-" }}</strong>
+                        {% if task.description %}
+                            <div style="color: #6b7280; font-size: 12px; margin-top: 4px;">{{ task.description }}</div>
+                        {% endif %}
+                        {% if task.beginner_guidance %}
+                            <div style="color: #2563eb; font-size: 12px; margin-top: 4px;">{{ task.beginner_guidance }}</div>
+                        {% endif %}
+                    </td>
+                    <td>{{ task.priority|default:"-" }}</td>
+                    <td>{{ task.due_date|default:"-" }}</td>
+                    <td>{{ task.owner_user_id|default:"-" }}</td>
+                    <td>{{ task.status|default:"-" }}</td>
+                </tr>
+            {% empty %}
+                <tr>
+                    <td colspan="8" class="empty">この案件に紐づくタスクはまだありません。</td>
+                </tr>
+            {% endfor %}
         </tbody>
-      </table>
-    {% else %}
-      <p class="empty">フェーズ別タスクはまだありません。</p>
-    {% endif %}
-  </section>
-
-  <section class="card">
-    <h2>ワークストリーム別タスク数</h2>
-    {% if workstream_counts %}
-      <table class="table compact">
-        <thead>
-          <tr>
-            <th>ワークストリーム</th>
-            <th>件数</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for workstream, count in workstream_counts.items %}
-          <tr>
-            <td>{{ workstream }}</td>
-            <td>{{ count }}</td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    {% else %}
-      <p class="empty">ワークストリーム別タスクはまだありません。</p>
-    {% endif %}
-  </section>
-
+    </table>
 </div>
 
-<section class="card">
-  <div class="section-title-row">
-    <div>
-      <h2>未完了タスク</h2>
-      <p>まずここを見ると、今やるべきことが分かります。</p>
+<div class="detail-section card">
+    <div class="page-header">
+        <div>
+            <h2>RAID一覧</h2>
+            <div style="color: #6b7280;">Risk / Assumption / Issue / Dependency を管理します。</div>
+        </div>
+
+        <a class="button-secondary no-print" href="{% url 'raid:create' %}?deal_id={{ deal.deal_id }}">
+            RAID追加
+        </a>
     </div>
-  </div>
 
-  <table class="table">
-    <thead>
-      <tr>
-        <th>タスクID</th>
-        <th>フェーズ</th>
-        <th>ワークストリーム</th>
-        <th>タイトル</th>
-        <th>優先度</th>
-        <th>期限</th>
-        <th>担当</th>
-        <th>ステータス</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for task in open_tasks %}
-      <tr>
-        <td>{{ task.task_id|default:"-" }}</td>
-        <td>{{ task.phase_id|default:"-" }}</td>
-        <td>{{ task.workstream_id|default:"-" }}</td>
-        <td>
-          <strong>{{ task.title|default:"-" }}</strong>
-          {% if task.beginner_guidance %}
-            <div class="mini-note">{{ task.beginner_guidance }}</div>
-          {% endif %}
-        </td>
-        <td>{{ task.priority|default:"-" }}</td>
-        <td>{{ task.due_date|default:"-" }}</td>
-        <td>{{ task.owner_user_id|default:"-" }}</td>
-        <td>{{ task.status|default:"-" }}</td>
-      </tr>
-      {% empty %}
-      <tr>
-        <td colspan="8">未完了タスクはありません。</td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-</section>
+    <table>
+        <thead>
+            <tr>
+                <th>RAID ID</th>
+                <th>種別</th>
+                <th>タイトル</th>
+                <th>可能性</th>
+                <th>影響</th>
+                <th>スコア</th>
+                <th>重要度</th>
+                <th>期限</th>
+                <th>担当</th>
+                <th>ステータス</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in raid_items %}
+                <tr>
+                    <td>{{ item.raid_id|default:"-" }}</td>
+                    <td>{{ item.raid_type|default:"-" }}</td>
+                    <td>
+                        <strong>{{ item.title|default:"-" }}</strong>
+                        {% if item.description %}
+                            <div style="color: #6b7280; font-size: 12px; margin-top: 4px;">{{ item.description }}</div>
+                        {% endif %}
+                        {% if item.why_it_matters %}
+                            <div style="color: #2563eb; font-size: 12px; margin-top: 4px;">{{ item.why_it_matters }}</div>
+                        {% endif %}
+                    </td>
+                    <td>{{ item.probability|default:"-" }}</td>
+                    <td>{{ item.impact|default:"-" }}</td>
+                    <td>{{ item.score|default:"-" }}</td>
+                    <td>{{ item.escalation_level|default:"-" }}</td>
+                    <td>{{ item.due_date|default:"-" }}</td>
+                    <td>{{ item.owner_user_id|default:"-" }}</td>
+                    <td>{{ item.status|default:"-" }}</td>
+                </tr>
+            {% empty %}
+                <tr>
+                    <td colspan="10" class="empty">この案件に紐づくRAIDはまだありません。</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
 
-<section class="card">
-  <div class="section-title-row">
-    <div>
-      <h2>重要RAID</h2>
-      <p>スコア9以上、または重要度が高いリスク・課題を優先確認します。</p>
+<div class="detail-section card">
+    <div class="page-header">
+        <div>
+            <h2>意思決定ログ</h2>
+            <div style="color: #6b7280;">重要な判断事項を残します。</div>
+        </div>
+
+        <a class="button-secondary no-print" href="{% url 'decisions:create' %}?deal_id={{ deal.deal_id }}">
+            意思決定追加
+        </a>
     </div>
-  </div>
 
-  <table class="table">
-    <thead>
-      <tr>
-        <th>RAID ID</th>
-        <th>種別</th>
-        <th>タイトル</th>
-        <th>発生可能性</th>
-        <th>影響度</th>
-        <th>スコア</th>
-        <th>期限</th>
-        <th>担当</th>
-        <th>ステータス</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for item in important_raid_items %}
-      <tr>
-        <td>{{ item.raid_id|default:"-" }}</td>
-        <td>{{ item.raid_type|default:"-" }}</td>
-        <td>
-          <strong>{{ item.title|default:"-" }}</strong>
-          {% if item.why_it_matters %}
-            <div class="mini-note">{{ item.why_it_matters }}</div>
-          {% endif %}
-        </td>
-        <td>{{ item.probability|default:"-" }}</td>
-        <td>{{ item.impact|default:"-" }}</td>
-        <td>{{ item.score|default:item._calculated_score|default:"-" }}</td>
-        <td>{{ item.due_date|default:"-" }}</td>
-        <td>{{ item.owner_user_id|default:"-" }}</td>
-        <td>{{ item.status|default:"-" }}</td>
-      </tr>
-      {% empty %}
-      <tr>
-        <td colspan="9">重要RAIDはありません。</td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-</section>
+    <table>
+        <thead>
+            <tr>
+                <th>Decision ID</th>
+                <th>タイトル</th>
+                <th>カテゴリ</th>
+                <th>決定者</th>
+                <th>決定日</th>
+                <th>ステータス</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for decision in decisions %}
+                <tr>
+                    <td>{{ decision.decision_id|default:"-" }}</td>
+                    <td>
+                        <strong>{{ decision.title|default:"-" }}</strong>
+                        {% if decision.description %}
+                            <div style="color: #6b7280; font-size: 12px; margin-top: 4px;">{{ decision.description }}</div>
+                        {% endif %}
+                    </td>
+                    <td>{{ decision.category|default:"-" }}</td>
+                    <td>{{ decision.decision_maker|default:"-" }}</td>
+                    <td>{{ decision.decision_date|default:"-" }}</td>
+                    <td>{{ decision.status|default:"-" }}</td>
+                </tr>
+            {% empty %}
+                <tr>
+                    <td colspan="6" class="empty">この案件に紐づく意思決定はまだありません。</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
 
-<section class="card">
-  <div class="section-title-row">
-    <div>
-      <h2>関連ドキュメント</h2>
-      <p>証跡、テンプレート、報告書、添付資料などを確認します。</p>
+<div class="detail-section card">
+    <div class="page-header">
+        <div>
+            <h2>承認一覧</h2>
+            <div style="color: #6b7280;">承認待ち・承認済み・差戻しなどを確認します。</div>
+        </div>
+
+        <a class="button-secondary no-print" href="{% url 'approvals:create' %}?deal_id={{ deal.deal_id }}">
+            承認追加
+        </a>
     </div>
-  </div>
 
-  <table class="table">
-    <thead>
-      <tr>
-        <th>文書ID</th>
-        <th>タイトル</th>
-        <th>種別</th>
-        <th>フェーズ</th>
-        <th>ワークストリーム</th>
-        <th>ファイル名</th>
-        <th>関連タスク</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for doc in documents %}
-      <tr>
-        <td>{{ doc.document_id|default:"-" }}</td>
-        <td>{{ doc.document_title|default:"-" }}</td>
-        <td>{{ doc.document_type|default:"-" }}</td>
-        <td>{{ doc.phase_id|default:"-" }}</td>
-        <td>{{ doc.workstream_id|default:"-" }}</td>
-        <td>{{ doc.file_name|default:"-" }}</td>
-        <td>{{ doc.linked_task_id|default:"-" }}</td>
-      </tr>
-      {% empty %}
-      <tr>
-        <td colspan="7">関連ドキュメントはありません。</td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-</section>
+    <table>
+        <thead>
+            <tr>
+                <th>Approval ID</th>
+                <th>対象</th>
+                <th>タイトル</th>
+                <th>申請者</th>
+                <th>承認者</th>
+                <th>期限</th>
+                <th>ステータス</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for approval in approvals %}
+                <tr>
+                    <td>{{ approval.approval_id|default:"-" }}</td>
+                    <td>{{ approval.target_type|default:"-" }}</td>
+                    <td>
+                        <strong>{{ approval.title|default:"-" }}</strong>
+                        {% if approval.description %}
+                            <div style="color: #6b7280; font-size: 12px; margin-top: 4px;">{{ approval.description }}</div>
+                        {% endif %}
+                    </td>
+                    <td>{{ approval.requester_user_id|default:"-" }}</td>
+                    <td>{{ approval.approver_user_id|default:"-" }}</td>
+                    <td>{{ approval.due_date|default:"-" }}</td>
+                    <td>{{ approval.approval_status|default:"-" }}</td>
+                </tr>
+            {% empty %}
+                <tr>
+                    <td colspan="7" class="empty">この案件に紐づく承認はまだありません。</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
 
-<section class="card">
-  <h2>PMI初心者向けメモ</h2>
-  <div class="beginner-guide">
-    <p>
-      <strong>Task</strong> は、PMIで実行すべき具体的な作業です。
-      例：Day1通知、権限付与、支払先確認、従業員説明など。
-    </p>
-    <p>
-      <strong>RAID</strong> は、Risk / Assumption / Issue / Dependency の略です。
-      PMIでは問題が後から大きくなりやすいため、早めに見える化します。
-    </p>
-    <p>
-      <strong>Document</strong> は、作業の証跡やテンプレートです。
-      後から「誰が、いつ、何を確認したか」を説明できるように残します。
-    </p>
-  </div>
-</section>
+<div class="detail-section card">
+    <div class="page-header">
+        <div>
+            <h2>関連ドキュメント</h2>
+            <div style="color: #6b7280;">証跡、テンプレート、報告書、添付資料などを確認します。</div>
+        </div>
 
-{% endif %}
+        <a class="button-secondary no-print" href="{% url 'documents:upload' %}?deal_id={{ deal.deal_id }}">
+            文書追加
+        </a>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>文書ID</th>
+                <th>タイトル</th>
+                <th>種別</th>
+                <th>フェーズ</th>
+                <th>ワークストリーム</th>
+                <th>ファイル名</th>
+                <th>関連タスク</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for doc in documents %}
+                <tr>
+                    <td>{{ doc.document_id|default:"-" }}</td>
+                    <td>{{ doc.document_title|default:"-" }}</td>
+                    <td>{{ doc.document_type|default:"-" }}</td>
+                    <td>{{ doc.phase_id|default:"-" }}</td>
+                    <td>{{ doc.workstream_id|default:"-" }}</td>
+                    <td>{{ doc.file_name|default:"-" }}</td>
+                    <td>{{ doc.linked_task_id|default:"-" }}</td>
+                </tr>
+            {% empty %}
+                <tr>
+                    <td colspan="7" class="empty">この案件に紐づくドキュメントはまだありません。</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<div class="detail-section card">
+    <h2>PMI初心者向けメモ</h2>
+
+    <div style="line-height: 1.9; color: #374151;">
+        <p>
+            <strong>Task</strong> は、PMIで実行すべき具体的な作業です。
+            例：Day1通知、権限付与、取引先連絡、従業員説明、支払先確認などです。
+        </p>
+
+        <p>
+            <strong>RAID</strong> は、Risk / Assumption / Issue / Dependency の略です。
+            PMIでは問題が後から大きくなりやすいため、早めに見える化して管理します。
+        </p>
+
+        <p>
+            <strong>Decision</strong> は、重要な意思決定の記録です。
+            PMIでは「誰が、いつ、何を、なぜ決めたか」を残すことで、後から説明できる状態にします。
+        </p>
+
+        <p>
+            <strong>Approval</strong> は、承認が必要な事項の管理です。
+            特に組織変更、支出、契約、外部通知、重要方針などは承認履歴を残すと安全です。
+        </p>
+
+        <p>
+            <strong>Document</strong> は、作業の証跡やテンプレートです。
+            後から「誰が、いつ、何を確認したか」を説明できるように残します。
+        </p>
+    </div>
+</div>
 
 {% endblock %}

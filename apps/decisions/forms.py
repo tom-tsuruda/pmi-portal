@@ -23,11 +23,10 @@ WORKSTREAM_CHOICES = [
 
 
 class DecisionCreateForm(forms.Form):
-    deal_id = forms.CharField(
-        label="案件ID",
-        max_length=100,
+    deal_id = forms.ChoiceField(
+        label="案件",
         required=True,
-        widget=forms.TextInput(attrs={"placeholder": "例：DEAL-000001"}),
+        choices=[],
     )
 
     phase_id = forms.ChoiceField(
@@ -157,6 +156,13 @@ class DecisionCreateForm(forms.Form):
         initial="DRAFT",
     )
 
+    def __init__(self, *args, deal_choices=None, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.fields["deal_id"].choices = deal_choices or [
+            ("", "案件がありません。先に案件を登録してください。")
+        ]
+
 
 class DecisionFilterForm(forms.Form):
     keyword = forms.CharField(
@@ -165,10 +171,10 @@ class DecisionFilterForm(forms.Form):
         widget=forms.TextInput(attrs={"placeholder": "タイトル・要約・詳細で検索"}),
     )
 
-    deal_id = forms.CharField(
-        label="案件ID",
+    deal_id = forms.ChoiceField(
+        label="案件",
         required=False,
-        widget=forms.TextInput(attrs={"placeholder": "例：DEAL-000001"}),
+        choices=[],
     )
 
     phase_id = forms.ChoiceField(
@@ -216,3 +222,8 @@ class DecisionFilterForm(forms.Form):
         required=False,
         widget=forms.TextInput(attrs={"placeholder": "例：u001"}),
     )
+
+    def __init__(self, *args, deal_choices=None, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.fields["deal_id"].choices = deal_choices or [("", "すべて")]

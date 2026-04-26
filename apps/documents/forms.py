@@ -2,11 +2,10 @@ from django import forms
 
 
 class DocumentUploadForm(forms.Form):
-    deal_id = forms.CharField(
-        label="案件ID",
-        max_length=100,
+    deal_id = forms.ChoiceField(
+        label="案件",
         required=True,
-        widget=forms.TextInput(attrs={"placeholder": "例：DEAL-000001"}),
+        choices=[],
     )
 
     phase_id = forms.ChoiceField(
@@ -143,6 +142,13 @@ class DocumentUploadForm(forms.Form):
         required=True,
     )
 
+    def __init__(self, *args, deal_choices=None, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.fields["deal_id"].choices = deal_choices or [
+            ("", "案件がありません。先に案件を登録してください。")
+        ]
+
 
 class DocumentFilterForm(forms.Form):
     keyword = forms.CharField(
@@ -155,14 +161,10 @@ class DocumentFilterForm(forms.Form):
         ),
     )
 
-    deal_id = forms.CharField(
-        label="案件ID",
+    deal_id = forms.ChoiceField(
+        label="案件",
         required=False,
-        widget=forms.TextInput(
-            attrs={
-                "placeholder": "例：DEAL-000001",
-            }
-        ),
+        choices=[],
     )
 
     phase_id = forms.ChoiceField(
@@ -263,3 +265,8 @@ class DocumentFilterForm(forms.Form):
         required=False,
         initial=False,
     )
+
+    def __init__(self, *args, deal_choices=None, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.fields["deal_id"].choices = deal_choices or [("", "すべて")]

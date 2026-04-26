@@ -19,11 +19,10 @@ APPROVAL_STATUS_CHOICES = [
 
 
 class ApprovalCreateForm(forms.Form):
-    deal_id = forms.CharField(
-        label="案件ID",
-        max_length=100,
+    deal_id = forms.ChoiceField(
+        label="案件",
         required=True,
-        widget=forms.TextInput(attrs={"placeholder": "例：DEAL-000001"}),
+        choices=[],
     )
 
     object_type = forms.ChoiceField(
@@ -71,6 +70,13 @@ class ApprovalCreateForm(forms.Form):
         ),
     )
 
+    def __init__(self, *args, deal_choices=None, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.fields["deal_id"].choices = deal_choices or [
+            ("", "案件がありません。先に案件を登録してください。")
+        ]
+
 
 class ApprovalFilterForm(forms.Form):
     keyword = forms.CharField(
@@ -79,10 +85,10 @@ class ApprovalFilterForm(forms.Form):
         widget=forms.TextInput(attrs={"placeholder": "承認ステップ・コメントで検索"}),
     )
 
-    deal_id = forms.CharField(
-        label="案件ID",
+    deal_id = forms.ChoiceField(
+        label="案件",
         required=False,
-        widget=forms.TextInput(attrs={"placeholder": "例：DEAL-000001"}),
+        choices=[],
     )
 
     object_type = forms.ChoiceField(
@@ -114,3 +120,8 @@ class ApprovalFilterForm(forms.Form):
         required=False,
         widget=forms.TextInput(attrs={"placeholder": "例：u002"}),
     )
+
+    def __init__(self, *args, deal_choices=None, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.fields["deal_id"].choices = deal_choices or [("", "すべて")]

@@ -6,14 +6,52 @@ from apps.approvals.forms import ApprovalCreateForm, ApprovalFilterForm
 from apps.approvals.services import ApprovalService
 from apps.audit.services import AuditLogService
 from apps.core.exceptions import RepositoryError
+from apps.deals.services import DealService
 
 
 approval_service = ApprovalService()
+deal_service = DealService()
 audit_service = AuditLogService()
 
 
+def _build_deal_choices(include_empty: bool = False) -> list[tuple[str, str]]:
+    choices = []
+
+    if include_empty:
+        choices.append(("", "すべて"))
+
+    try:
+        deals = deal_service.list_deals()
+    except RepositoryError:
+        deals = []
+
+    for deal in deals:
+        deal_id = deal.get("deal_id") or ""
+        deal_name = deal.get("deal_name") or ""
+        target_company_name = deal.get("target_company_name") or ""
+
+        if not deal_id:
+            continue
+
+        label_parts = [deal_id]
+
+        if deal_name:
+            label_parts.append(deal_name)
+
+        if target_company_name:
+            label_parts.append(f"対象：{target_company_name}")
+
+        choices.append((deal_id, " / ".join(label_parts)))
+
+    if not choices:
+        choices.append(("", "案件がありません。先に案件を登録してください。"))
+
+    return choices
+
+
 def approval_list(request):
-    filter_form = ApprovalFilterForm(request.GET or None)
+    deal_choices = _build_deal_choices(include_empty=True)
+    filter_form = ApprovalFilterForm(request.GET or None, deal_choices=deal_choices)
 
     filters = {}
 
@@ -42,8 +80,10 @@ def approval_create(request):
     initial_object_type = request.GET.get("object_type") or ""
     initial_object_id = request.GET.get("object_id") or ""
 
+    deal_choices = _build_deal_choices(include_empty=False)
+
     if request.method == "POST":
-        form = ApprovalCreateForm(request.POST)
+        form = ApprovalCreateForm(request.POST, deal_choices=deal_choices)
 
         if form.is_valid():
             dto = ApprovalCreateDTO(**form.cleaned_data)
@@ -78,7 +118,8 @@ def approval_create(request):
                 "deal_id": initial_deal_id,
                 "object_type": initial_object_type,
                 "object_id": initial_object_id,
-            }
+            },
+            deal_choices=deal_choices,
         )
 
     return render(
