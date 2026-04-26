@@ -95,7 +95,7 @@
                     <th>ファイル名</th>
                     <th>状態</th>
                     <th>担当者</th>
-                    <th>保存先</th>
+                    <th>ファイル</th>
                     <th>削除</th>
                 </tr>
             </thead>
@@ -111,7 +111,14 @@
                         <td>{{ doc.file_name }}</td>
                         <td>{{ doc.status }}</td>
                         <td>{{ doc.owner_user_id }}</td>
-                        <td>{{ doc.storage_path }}</td>
+                        <td>
+                            <a class="button-secondary" href="{% url 'documents:download' doc.document_id %}" target="_blank">
+                                開く
+                            </a>
+                            <div style="color: #6b7280; font-size: 11.5px; margin-top: 4px;">
+                                {{ doc.file_name|default:"-" }}
+                            </div>
+                        </td>
                         <td>
                             {% if doc.deleted_flag != 1 and doc.deleted_flag != "1" %}
                                 <form method="post" action="{% url 'documents:delete' doc.document_id %}">

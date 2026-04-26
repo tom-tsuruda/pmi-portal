@@ -91,7 +91,7 @@
                     <th>タグ</th>
                     <th>版</th>
                     <th>ファイル名</th>
-                    <th>保存先</th>
+                    <th>ファイル</th>
                     <th>削除</th>
                 </tr>
             </thead>
@@ -121,7 +121,14 @@
                         <td>{{ template.tags|default:"-" }}</td>
                         <td>{{ template.version_current|default:"1.0" }}</td>
                         <td>{{ template.file_name|default:"-" }}</td>
-                        <td>{{ template.storage_path|default:"-" }}</td>
+                        <td>
+                            <a class="button-secondary" href="{% url 'documents:download' template.document_id %}" target="_blank">
+                                開く
+                            </a>
+                            <div style="color: #6b7280; font-size: 11.5px; margin-top: 4px;">
+                                {{ template.file_name|default:"-" }}
+                            </div>
+                        </td>
                         <td>
                             {% if template.deleted_flag != 1 and template.deleted_flag != "1" %}
                                 <form method="post" action="{% url 'documents:delete' template.document_id %}">

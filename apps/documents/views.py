@@ -12,7 +12,8 @@ from apps.documents.forms import (
 )
 from apps.documents.services import DocumentService
 from apps.tasks.services import TaskService
-
+from django.http import FileResponse
+from urllib.parse import quote
 
 document_service = DocumentService()
 deal_service = DealService()
@@ -337,7 +338,33 @@ def _normal_document_upload(request, initial_deal_id: str = "", initial_task_id:
             "template_mode": False,
         },
     )
+def document_download(request, document_id: str):
+    try:
+        document = document_service.get_document(document_id)
+        absolute_path = document_service.get_absolute_file_path(document_id)
 
+    except RepositoryError as e:
+        messages.error(request, str(e))
+        return redirect("documents:list")
+
+    except Exception as e:
+        messages.error(request, str(e))
+        return redirect("documents:list")
+
+    file_name = document.get("file_name") or absolute_path.name
+
+    response = FileResponse(
+        open(absolute_path, "rb"),
+        as_attachment=False,
+        filename=file_name,
+    )
+
+    # 日本語ファイル名対策
+    response["Content-Disposition"] = (
+        f"inline; filename*=UTF-8''{quote(str(file_name))}"
+    )
+
+    return response
 
 def document_delete(request, document_id: str):
     if request.method != "POST":

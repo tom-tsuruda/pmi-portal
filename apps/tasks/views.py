@@ -4,6 +4,7 @@ from django.shortcuts import redirect, render
 from apps.audit.services import AuditLogService
 from apps.core.exceptions import RepositoryError
 from apps.deals.services import DealService
+from apps.documents.services import DocumentService
 from apps.tasks.dtos import TaskCreateDTO
 from apps.tasks.forms import TaskCreateForm, TaskFilterForm
 from apps.tasks.services import TaskService
@@ -11,6 +12,7 @@ from apps.tasks.services import TaskService
 
 task_service = TaskService()
 deal_service = DealService()
+document_service = DocumentService()
 audit_service = AuditLogService()
 
 
@@ -71,6 +73,39 @@ def task_list(request):
             "tasks": tasks,
             "filter_form": filter_form,
             "filters": filters,
+        },
+    )
+
+
+def task_related_templates(request, task_id: str):
+    """
+    タスクに関連しそうなテンプレートを別画面で表示する。
+    タスク一覧を見やすくするため、一覧内にはテンプレート名を直接表示しない。
+    """
+    try:
+        task = task_service.get_task(task_id)
+
+        if not task:
+            messages.error(request, f"タスクが見つかりません: {task_id}")
+            return redirect("tasks:list")
+
+        templates = document_service.list_templates()
+        related_templates = document_service.find_related_templates_for_task(
+            task=task,
+            templates=templates,
+            limit=20,
+        )
+
+    except RepositoryError as e:
+        messages.error(request, str(e))
+        return redirect("tasks:list")
+
+    return render(
+        request,
+        "tasks/task_related_templates.html",
+        {
+            "task": task,
+            "related_templates": related_templates,
         },
     )
 

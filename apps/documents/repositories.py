@@ -21,6 +21,15 @@ class ExcelDocumentRepository(BaseExcelRepository):
     def find_by_deal(self, deal_id: str) -> list[dict]:
         return self.find_by("deal_id", deal_id)
 
+    def find_one_by_document_id(self, document_id: str) -> dict | None:
+        rows = self.find_all()
+
+        for row in rows:
+            if str(row.get("document_id") or "") == str(document_id):
+                return row
+
+        return None
+
     def filter_documents(self, filters: dict) -> list[dict]:
         rows = self.find_all()
 

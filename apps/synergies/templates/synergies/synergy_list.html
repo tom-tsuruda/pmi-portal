@@ -1,0 +1,132 @@
+{% extends "base.html" %}
+
+{% block title %}Synergy一覧 | PMI Portal{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="page-header">
+        <div>
+            <h2>Synergy一覧</h2>
+            <p style="margin: 6px 0 0; color: #6b7280;">
+                PMIで期待する統合効果・シナジー施策を管理します。
+            </p>
+        </div>
+
+        <a class="button" href="{% url 'synergies:create' %}">Synergy登録</a>
+    </div>
+
+    <form method="get" class="filter-box">
+        <div class="filter-grid">
+            <div>
+                {{ filter_form.keyword.label_tag }}
+                {{ filter_form.keyword }}
+            </div>
+
+            <div>
+                {{ filter_form.deal_id.label_tag }}
+                {{ filter_form.deal_id }}
+            </div>
+
+            <div>
+                {{ filter_form.workstream_id.label_tag }}
+                {{ filter_form.workstream_id }}
+            </div>
+
+            <div>
+                {{ filter_form.synergy_type.label_tag }}
+                {{ filter_form.synergy_type }}
+            </div>
+
+            <div>
+                {{ filter_form.status.label_tag }}
+                {{ filter_form.status }}
+            </div>
+
+            <div>
+                {{ filter_form.owner_user_id.label_tag }}
+                {{ filter_form.owner_user_id }}
+            </div>
+
+            <div class="checkbox-row">
+                {{ filter_form.slippage_only }}
+                {{ filter_form.slippage_only.label_tag }}
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <button class="button" type="submit">絞り込み</button>
+            <a class="button-secondary" href="{% url 'synergies:list' %}">解除</a>
+        </div>
+    </form>
+
+    <div style="margin: 16px 0; color: #6b7280;">
+        表示件数：{{ synergies|length }} 件
+    </div>
+
+    {% if synergies %}
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>案件</th>
+                    <th>WS</th>
+                    <th>種別</th>
+                    <th>施策名</th>
+                    <th>目標額</th>
+                    <th>実績額</th>
+                    <th>Run-rate</th>
+                    <th>確度</th>
+                    <th>計画終了</th>
+                    <th>担当</th>
+                    <th>状態</th>
+                    <th>遅延</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in synergies %}
+                    <tr>
+                        <td>{{ item.synergy_id|default:"-" }}</td>
+                        <td>
+                            {% if item.deal_id %}
+                                <a href="{% url 'deals:detail' item.deal_id %}">
+                                    {{ item.deal_id }}
+                                </a>
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                        <td>{{ item.workstream_id|default:"-" }}</td>
+                        <td>{{ item.synergy_type|default:"-" }}</td>
+                        <td>
+                            <strong>{{ item.initiative_name|default:"-" }}</strong>
+                            {% if item.description %}
+                                <div style="color: #6b7280; font-size: 11.5px; margin-top: 4px;">
+                                    {{ item.description }}
+                                </div>
+                            {% endif %}
+                        </td>
+                        <td>{{ item.target_amount|default:"0" }}</td>
+                        <td>{{ item.actual_amount|default:"0" }}</td>
+                        <td>{{ item.run_rate_amount|default:"0" }}</td>
+                        <td>{{ item.confidence_percent|default:"0" }}%</td>
+                        <td>{{ item.planned_end_date|default:"-" }}</td>
+                        <td>{{ item.owner_user_id|default:"-" }}</td>
+                        <td>{{ item.status|default:"-" }}</td>
+                        <td>
+                            {% if item.slippage_flag == 1 or item.slippage_flag == "1" %}
+                                <span style="color: #dc2626; font-weight: 700;">遅延</span>
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <div class="empty">
+            条件に一致するSynergy施策はありません。
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

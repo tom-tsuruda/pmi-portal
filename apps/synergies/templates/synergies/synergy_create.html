@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+
+{% block title %}Synergy登録 | PMI Portal{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="page-header">
+        <div>
+            <h2>Synergy登録</h2>
+            <p style="margin: 6px 0 0; color: #6b7280;">
+                PMIで期待するコスト削減、売上拡大、購買条件改善、システム統合効果などを登録します。
+            </p>
+        </div>
+
+        {% if deal_id %}
+            <a class="button-secondary" href="{% url 'deals:detail' deal_id %}">案件詳細へ戻る</a>
+        {% else %}
+            <a class="button-secondary" href="{% url 'synergies:list' %}">一覧へ戻る</a>
+        {% endif %}
+    </div>
+
+    <div style="background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 10px; padding: 14px; margin-bottom: 18px;">
+        <strong>Synergyの考え方：</strong>
+        <span style="color: #4b5563;">
+            Synergyは、PMIによって実現したい経営効果です。単なる作業ではなく、金額・確度・期限・遅延有無で管理します。
+        </span>
+    </div>
+
+    <form method="post">
+        {% csrf_token %}
+
+        {{ form.as_p }}
+
+        <div class="form-actions">
+            <button class="button" type="submit">登録する</button>
+
+            {% if deal_id %}
+                <a class="button-secondary" href="{% url 'deals:detail' deal_id %}">キャンセル</a>
+            {% else %}
+                <a class="button-secondary" href="{% url 'synergies:list' %}">キャンセル</a>
+            {% endif %}
+        </div>
+    </form>
+</div>
+{% endblock %}

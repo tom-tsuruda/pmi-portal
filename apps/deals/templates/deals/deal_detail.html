@@ -156,7 +156,68 @@
         </div>
     {% endif %}
 </div>
+<div class="detail-section card">
+    <div class="page-header">
+        <div>
+            <h2>Synergyサマリー</h2>
+            <div style="color: #6b7280;">
+                PMIで期待する統合効果の目標額、実績額、Run-rate、一時費用、遅延状況を確認します。
+            </div>
+        </div>
 
+        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+            <a class="button-secondary" href="{% url 'synergies:list' %}?deal_id={{ deal.deal_id }}">
+                Synergy一覧へ
+            </a>
+            <a class="button-secondary" href="{% url 'synergies:create' %}?deal_id={{ deal.deal_id }}">
+                Synergy登録
+            </a>
+        </div>
+    </div>
+
+    <table>
+        <tbody>
+            <tr>
+                <th>施策数</th>
+                <td>{{ synergy_summary.count }}</td>
+                <th>達成済</th>
+                <td>{{ synergy_summary.achieved_count }}</td>
+            </tr>
+            <tr>
+                <th>目標額</th>
+                <td>{{ synergy_summary.target_amount }}</td>
+                <th>実績額</th>
+                <td>{{ synergy_summary.actual_amount }}</td>
+            </tr>
+            <tr>
+                <th>達成率</th>
+                <td>{{ synergy_summary.achievement_rate }}%</td>
+                <th>Run-rate効果額</th>
+                <td>{{ synergy_summary.run_rate_amount }}</td>
+            </tr>
+            <tr>
+                <th>一時費用</th>
+                <td>{{ synergy_summary.one_time_cost_amount }}</td>
+                <th>遅延施策</th>
+                <td>
+                    {% if synergy_summary.slippage_count %}
+                        <span style="color: #dc2626; font-weight: 700;">
+                            {{ synergy_summary.slippage_count }}
+                        </span>
+                    {% else %}
+                        0
+                    {% endif %}
+                </td>
+            </tr>
+            <tr>
+                <th>注意施策</th>
+                <td>{{ synergy_summary.at_risk_count }}</td>
+                <th>基準額</th>
+                <td>{{ synergy_summary.baseline_amount }}</td>
+            </tr>
+        </tbody>
+    </table>
+</div>
 <div class="detail-section card">
     <div class="page-header">
         <div>
@@ -550,6 +611,14 @@
     </table>
 </div>
 
+<div class="summary-box">
+    <div class="summary-label">Synergy達成率</div>
+    <div class="summary-value">{{ synergy_summary.achievement_rate }}%</div>
+    <div class="summary-sub">
+        実績 {{ synergy_summary.actual_amount }} / 目標 {{ synergy_summary.target_amount }}
+    </div>
+</div>
+
 <div class="detail-section card">
     <div class="page-header">
         <div>
@@ -571,6 +640,7 @@
                 <th>フェーズ</th>
                 <th>ワークストリーム</th>
                 <th>ファイル名</th>
+                <th class="no-print">表示</th>
                 <th>関連タスク</th>
             </tr>
         </thead>
@@ -582,12 +652,17 @@
                     <td>{{ doc.document_type|default:"-" }}</td>
                     <td>{{ doc.phase_id|default:"-" }}</td>
                     <td>{{ doc.workstream_id|default:"-" }}</td>
+                    <td class="no-print">
+                        <a class="button-secondary" href="{% url 'documents:download' doc.document_id %}" target="_blank">
+                            開く
+                        </a>
+                    </td>
                     <td>{{ doc.file_name|default:"-" }}</td>
                     <td>{{ doc.linked_task_id|default:"-" }}</td>
                 </tr>
             {% empty %}
                 <tr>
-                    <td colspan="7" class="empty">この案件に紐づくドキュメントはまだありません。</td>
+                    <td colspan="8" class="empty">この案件に紐づくドキュメントはまだありません。</td>
                 </tr>
             {% endfor %}
         </tbody>

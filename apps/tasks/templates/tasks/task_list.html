@@ -8,7 +8,7 @@
         <div>
             <h2>タスク一覧</h2>
             <p style="margin: 6px 0 0; color: #6b7280;">
-                タスクの進捗、期限、証跡添付状況を確認します。証跡追加はこの画面から行います。
+                タスクの進捗、期限、証跡添付状況を確認します。関連テンプレートは必要なときに検索します。
             </p>
         </div>
 
@@ -80,9 +80,9 @@
                     <th>優先度</th>
                     <th>ステータス</th>
                     <th>証跡</th>
+                    <th>テンプレート</th>
                     <th>担当者</th>
                     <th>期限</th>
-                    <th>テンプレート</th>
                     <th>ステータス更新</th>
                     <th>証跡追加</th>
                 </tr>
@@ -110,13 +110,13 @@
                             <strong>{{ task.title|default:"-" }}</strong>
 
                             {% if task.description %}
-                                <div style="color: #6b7280; font-size: 12px; margin-top: 4px;">
+                                <div style="color: #6b7280; font-size: 11.5px; margin-top: 4px;">
                                     {{ task.description }}
                                 </div>
                             {% endif %}
 
                             {% if task.beginner_guidance %}
-                                <div style="color: #2563eb; font-size: 12px; margin-top: 4px;">
+                                <div style="color: #2563eb; font-size: 11.5px; margin-top: 4px;">
                                     {{ task.beginner_guidance }}
                                 </div>
                             {% endif %}
@@ -131,20 +131,27 @@
                             {% else %}
                                 <span style="color: #dc2626; font-weight: 700;">未添付</span>
                                 {% if task.evidence_status %}
-                                    <div style="color: #6b7280; font-size: 12px; margin-top: 4px;">
+                                    <div style="color: #6b7280; font-size: 11.5px; margin-top: 4px;">
                                         {{ task.evidence_status }}
                                     </div>
                                 {% endif %}
                             {% endif %}
                         </td>
 
+                        <td>
+                            <a class="button-secondary" href="{% url 'tasks:related_templates' task.task_id %}">
+                                探す
+                            </a>
+                        </td>
+
                         <td>{{ task.owner_user_id|default:"-" }}</td>
                         <td>{{ task.due_date|default:"-" }}</td>
-                        <td>{{ task.template_source_id|default:"-" }}</td>
 
                         <td>
                             <form method="post" action="{% url 'tasks:update_status' task.task_id %}" style="display: flex; gap: 6px; align-items: center;">
                                 {% csrf_token %}
+
+                                <input type="hidden" name="deal_id" value="{{ task.deal_id }}">
 
                                 <select name="status">
                                     <option value="TODO" {% if task.status == "TODO" %}selected{% endif %}>TODO</option>

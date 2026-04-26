@@ -14,7 +14,7 @@ from apps.questionnaire.forms import QuestionnaireAnswerForm
 from apps.questionnaire.services import QuestionnaireService
 from apps.raid.services import RaidService
 from apps.tasks.services import TaskService
-
+from apps.synergies.services import SynergyService
 
 deal_service = DealService()
 task_service = TaskService()
@@ -23,7 +23,7 @@ document_service = DocumentService()
 decision_service = DecisionService()
 approval_service = ApprovalService()
 questionnaire_service = QuestionnaireService()
-
+synergy_service = SynergyService()
 
 def deal_list(request):
     filter_form = DealFilterForm(request.GET or None)
@@ -159,6 +159,7 @@ def deal_detail(request, deal_id: str):
     )
 
     evidence_summary = _build_evidence_summary(tasks)
+    synergy_summary = synergy_service.build_summary(deal_id)
 
     open_raid_count = len(
         [
@@ -199,6 +200,7 @@ def deal_detail(request, deal_id: str):
             "phase_summary": phase_summary,
             "workstream_summary": workstream_summary,
             "evidence_summary": evidence_summary,
+            
         },
     )
 
@@ -345,6 +347,7 @@ def deal_report(request, deal_id: str):
             "approvals": approvals,
             "pending_approvals": pending_approvals,
             "report_summary": report_summary,
+            "synergy_summary": synergy_summary,
         },
     )
 
