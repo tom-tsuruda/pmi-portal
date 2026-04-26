@@ -8,7 +8,7 @@
         <div>
             <h2>タスク一覧</h2>
             <p style="margin: 6px 0 0; color: #6b7280;">
-                タスクの進捗、期限、証跡添付状況を確認します。関連テンプレートは必要なときに検索します。
+                タスクの進捗、期限、依存関係、証跡添付状況を確認します。タスクIDまたはタスク名をクリックすると詳細を確認できます。
             </p>
         </div>
 
@@ -74,34 +74,33 @@
                 <tr>
                     <th>タスクID</th>
                     <th>案件ID</th>
-                    <th>フェーズ</th>
+                    <th>Phase</th>
                     <th>WS</th>
                     <th>タスク名</th>
                     <th>優先度</th>
                     <th>ステータス</th>
                     <th>依存</th>
                     <th>証跡</th>
-                    <th>テンプレート</th>
-                    <th>担当者</th>
+                    <th>担当</th>
                     <th>期限</th>
-                    <th>ステータス更新</th>
-                    <th>証跡追加</th>
-                    <th>編集</th>
                 </tr>
             </thead>
 
             <tbody>
                 {% for task in tasks %}
-                    <tr>
+                    <tr
+                        onclick="window.location.href='{% url 'tasks:detail' task.task_id %}'"
+                        style="cursor: pointer;"
+                    >
                         <td>
-                            <a href="{% url 'tasks:detail' task.task_id %}">
-                                {{ task.task_id }}
+                            <a href="{% url 'tasks:detail' task.task_id %}" onclick="event.stopPropagation();">
+                                {{ task.task_id|default:"-" }}
                             </a>
                         </td>
 
                         <td>
                             {% if task.deal_id %}
-                                <a href="{% url 'deals:detail' task.deal_id %}">
+                                <a href="{% url 'deals:detail' task.deal_id %}" onclick="event.stopPropagation();">
                                     {{ task.deal_id }}
                                 </a>
                             {% else %}
@@ -113,25 +112,54 @@
                         <td>{{ task.workstream_id|default:"-" }}</td>
 
                         <td>
-                            <a href="{% url 'tasks:detail' task.task_id %}" style="font-weight: 700;">
+                            <a href="{% url 'tasks:detail' task.task_id %}" onclick="event.stopPropagation();" style="font-weight: 700;">
                                 {{ task.title|default:"-" }}
                             </a>
-                        
+
                             {% if task.description %}
                                 <div style="color: #6b7280; font-size: 11.5px; margin-top: 4px;">
-                                    {{ task.description }}
+                                    {{ task.description|truncatechars:60 }}
                                 </div>
                             {% endif %}
-                        
+
                             {% if task.beginner_guidance %}
                                 <div style="color: #2563eb; font-size: 11.5px; margin-top: 4px;">
-                                    {{ task.beginner_guidance }}
+                                    {{ task.beginner_guidance|truncatechars:60 }}
                                 </div>
                             {% endif %}
                         </td>
 
                         <td>{{ task.priority|default:"-" }}</td>
-                        <td>{{ task.status|default:"-" }}</td>
+
+                        <td>
+                            {% if task.status == "DONE" %}
+                                <span style="color: #166534; font-weight: 700;">DONE</span>
+                            {% elif task.status == "BLOCKED" %}
+                                <span style="color: #dc2626; font-weight: 700;">BLOCKED</span>
+                            {% elif task.status == "CANCELLED" %}
+                                <span style="color: #6b7280; font-weight: 700;">CANCELLED</span>
+                            {% elif task.status == "IN_PROGRESS" %}
+                                <span style="color: #2563eb; font-weight: 700;">IN_PROGRESS</span>
+                            {% else %}
+                                {{ task.status|default:"-" }}
+                            {% endif %}
+                        </td>
+
+                        <td>
+                            {% if task.is_dependency_blocked %}
+                                <span style="color: #dc2626; font-weight: 700;">ブロック中</span>
+                                <div style="color: #6b7280; font-size: 11.5px; margin-top: 4px;">
+                                    未完了依存 {{ task.blocking_dependency_count }}件
+                                </div>
+                            {% elif task.dependency_count %}
+                                <span style="color: #ca8a04; font-weight: 700;">依存あり</span>
+                                <div style="color: #6b7280; font-size: 11.5px; margin-top: 4px;">
+                                    依存 {{ task.dependency_count }}件
+                                </div>
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
 
                         <td>
                             {% if task.evidence_status == "ATTACHED" or task.evidence_status == "COMPLETED" or task.evidence_status == "DONE" or task.evidence_status == "OK" or task.evidence_status == "添付済" or task.evidence_status == "完了" %}
@@ -146,59 +174,8 @@
                             {% endif %}
                         </td>
 
-                        <td>
-                            <a class="button-secondary" href="{% url 'tasks:related_templates' task.task_id %}">
-                                探す
-                            </a>
-                        </td>
-
                         <td>{{ task.owner_user_id|default:"-" }}</td>
                         <td>{{ task.due_date|default:"-" }}</td>
-
-                        <td>
-                            <form method="post" action="{% url 'tasks:update_status' task.task_id %}" style="display: flex; gap: 6px; align-items: center;">
-                                {% csrf_token %}
-
-                                <input type="hidden" name="deal_id" value="{{ task.deal_id }}">
-
-                                <select name="status">
-                                    <option value="TODO" {% if task.status == "TODO" %}selected{% endif %}>TODO</option>
-                                    <option value="IN_PROGRESS" {% if task.status == "IN_PROGRESS" %}selected{% endif %}>IN_PROGRESS</option>
-                                    <option value="DONE" {% if task.status == "DONE" %}selected{% endif %}>DONE</option>
-                                    <option value="BLOCKED" {% if task.status == "BLOCKED" %}selected{% endif %}>BLOCKED</option>
-                                    <option value="CANCELLED" {% if task.status == "CANCELLED" %}selected{% endif %}>CANCELLED</option>
-                                </select>
-
-                                <button class="button-secondary" type="submit">
-                                    更新
-                                </button>
-                            </form>
-                        </td>
-                        <td>
-                            {% if task.is_dependency_blocked %}
-                                <span style="color: #dc2626; font-weight: 700;">ブロック中</span>
-                                <div style="color: #6b7280; font-size: 11.5px; margin-top: 4px;">
-                                    未完了依存 {{ task.blocking_dependency_count }} 件
-                                </div>
-                            {% elif task.dependency_count %}
-                                <span style="color: #ca8a04; font-weight: 700;">依存あり</span>
-                                <div style="color: #6b7280; font-size: 11.5px; margin-top: 4px;">
-                                    依存 {{ task.dependency_count }} 件
-                                </div>
-                            {% else %}
-                                -
-                            {% endif %}
-                        </td>
-                        <td>
-                            <a class="button-secondary" href="{% url 'documents:upload' %}?deal_id={{ task.deal_id }}&task_id={{ task.task_id }}">
-                                証跡追加
-                            </a>
-                        </td>
-                        <td>
-                            <a class="button-secondary" href="{% url 'tasks:edit' task.task_id %}">
-                                編集
-                            </a>
-                        </td>
                     </tr>
                 {% endfor %}
             </tbody>
