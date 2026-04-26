@@ -5,17 +5,76 @@
 {% block content %}
 <div class="card">
     <div class="page-header">
-        <h2>新規案件登録</h2>
+        <div>
+            <h2>新規案件登録</h2>
+            <p style="margin: 6px 0 0; color: #6b7280;">
+                案件基本情報と質問票を入力すると、初期PMIタスクを自動生成します。
+            </p>
+        </div>
         <a class="button-secondary" href="{% url 'deals:list' %}">一覧へ戻る</a>
+    </div>
+
+    <div style="background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 12px; padding: 16px; margin-bottom: 24px;">
+        <h3 style="margin-top: 0;">登録の流れ</h3>
+        <p style="color: #4b5563; line-height: 1.8; margin-bottom: 0;">
+            まず案件名・対象会社などの基本情報を入力し、その下の質問票に回答してください。
+            回答内容に応じて、Day1、IT、人事、法務、財務、コミュニケーションなどの初期タスクを自動生成します。
+        </p>
     </div>
 
     <form method="post">
         {% csrf_token %}
 
-        {{ form.as_p }}
+        <div class="detail-section">
+            <h3>1. 案件基本情報</h3>
+
+            {{ form.as_p }}
+        </div>
+
+        <div class="detail-section">
+            <h3>2. PMI質問票</h3>
+
+            <p style="color: #6b7280; line-height: 1.8;">
+                以下の質問に回答すると、この案件で必要になりやすい初期タスクを自動生成します。
+                分からない場合は、いったん「はい」にしておくとタスク漏れを防ぎやすくなります。
+            </p>
+
+            {% for field in questionnaire_form %}
+                <div style="background: white; border: 1px solid #e5e7eb; border-radius: 12px; padding: 16px; margin-bottom: 14px;">
+                    <label for="{{ field.id_for_label }}" style="font-weight: 700;">
+                        {{ forloop.counter }}. {{ field.label }}
+                    </label>
+
+                    <div style="margin-top: 8px;">
+                        {{ field }}
+                    </div>
+
+                    {% if field.help_text %}
+                        <div style="color: #6b7280; font-size: 13px; line-height: 1.6; margin-top: 8px;">
+                            {{ field.help_text }}
+                        </div>
+                    {% endif %}
+
+                    {% if field.errors %}
+                        <div style="color: #dc2626; margin-top: 8px;">
+                            {{ field.errors }}
+                        </div>
+                    {% endif %}
+                </div>
+            {% empty %}
+                <div class="empty">
+                    質問票が設定されていません。
+                </div>
+            {% endfor %}
+        </div>
 
         <div class="form-actions">
-            <button class="button" type="submit">登録する</button>
+            <button class="button" type="submit">
+                案件登録してタスク自動生成
+            </button>
+            <a class="button-secondary" href="{% url 'deals:list' %}">
+                キャンセル
+            </a>
         </div>
     </form>
 </div>

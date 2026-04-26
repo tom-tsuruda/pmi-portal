@@ -401,7 +401,10 @@ class QuestionnaireService:
         deal = self.deal_service.get_deal(deal_id)
 
         templates = self.template_repo.find_active()
-        if not templates:
+
+        # 開発初期はExcel側の checklist_templates が少数だけ入っている場合がある。
+        # 標準テンプレート数に満たない場合は、コード側の標準テンプレートを使う。
+        if len(templates) < len(DEFAULT_TEMPLATES):
             templates = DEFAULT_TEMPLATES
 
         answer_map = self._build_answer_map(

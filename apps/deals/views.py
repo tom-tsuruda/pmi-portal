@@ -10,13 +10,15 @@ from apps.raid.services import RaidService
 from apps.tasks.services import TaskService
 from apps.decisions.services import DecisionService
 from apps.approvals.services import ApprovalService
-
+from apps.questionnaire.forms import QuestionnaireAnswerForm
+from apps.questionnaire.services import QuestionnaireService
 deal_service = DealService()
 task_service = TaskService()
 raid_service = RaidService()
 document_service = DocumentService()
 decision_service = DecisionService()
 approval_service = ApprovalService()
+questionnaire_service = QuestionnaireService()
 
 def deal_list(request):
     filter_form = DealFilterForm(request.GET or None)
@@ -44,29 +46,61 @@ def deal_list(request):
 
 
 def deal_create(request):
+    try:
+        questions = questionnaire_service.list_questions()
+    except RepositoryError as e:
+        questions = []
+        messages.error(request, str(e))
+
     if request.method == "POST":
         form = DealCreateForm(request.POST)
+        questionnaire_form = QuestionnaireAnswerForm(
+            request.POST,
+            questions=questions,
+        )
 
-        if form.is_valid():
+        if form.is_valid() and questionnaire_form.is_valid():
             dto = DealCreateDTO(**form.cleaned_data)
 
             try:
                 deal_id = deal_service.create_deal(dto)
-                messages.success(
-                request,
-                f"案件を登録しました: {deal_id}。続いて質問票に回答し、初期タスクを自動生成してください。"
+
+                answer_count = questionnaire_service.save_answers(
+                    deal_id=deal_id,
+                    questions=questions,
+                    cleaned_data=questionnaire_form.cleaned_data,
                 )
-                return redirect("questionnaire:start", deal_id=deal_id)
+
+                result = questionnaire_service.generate_tasks_from_templates(
+                    deal_id=deal_id,
+                    questions=questions,
+                    cleaned_data=questionnaire_form.cleaned_data,
+                )
+
+                messages.success(
+                    request,
+                    f"案件を登録しました: {deal_id}。"
+                    f"質問票 {answer_count} 件を保存し、"
+                    f"新規タスク {result['created_count']} 件を生成しました。"
+                    f"既存タスク {result['skipped_count']} 件、"
+                    f"条件不一致 {result['condition_skipped_count']} 件です。",
+                )
+
+                return redirect("deals:detail", deal_id=deal_id)
+
             except RepositoryError as e:
                 messages.error(request, str(e))
     else:
         form = DealCreateForm()
+        questionnaire_form = QuestionnaireAnswerForm(questions=questions)
 
     return render(
         request,
         "deals/deal_create.html",
         {
             "form": form,
+            "questionnaire_form": questionnaire_form,
+            "questions": questions,
         },
     )
 
