@@ -7,10 +7,12 @@ from apps.deals.services import DealService
 from apps.documents.dtos import DocumentUploadDTO
 from apps.documents.forms import DocumentFilterForm, DocumentUploadForm
 from apps.documents.services import DocumentService
+from apps.tasks.services import TaskService
 
 
 document_service = DocumentService()
 deal_service = DealService()
+task_service = TaskService()
 audit_service = AuditLogService()
 
 
@@ -49,6 +51,44 @@ def _build_deal_choices(include_empty: bool = False) -> list[tuple[str, str]]:
     return choices
 
 
+def _build_task_choices(deal_id: str | None = None) -> list[tuple[str, str]]:
+    choices = [("", "関連タスクなし")]
+
+    if not deal_id:
+        return choices
+
+    try:
+        tasks = task_service.list_tasks(deal_id=deal_id)
+    except RepositoryError:
+        tasks = []
+
+    for task in tasks:
+        task_id = task.get("task_id") or ""
+        title = task.get("title") or ""
+        phase_id = task.get("phase_id") or ""
+        workstream_id = task.get("workstream_id") or ""
+        evidence_required_flag = str(task.get("evidence_required_flag") or "")
+        evidence_status = task.get("evidence_status") or ""
+
+        if not task_id:
+            continue
+
+        label_parts = [task_id]
+
+        if title:
+            label_parts.append(title)
+
+        if phase_id or workstream_id:
+            label_parts.append(f"{phase_id}/{workstream_id}")
+
+        if evidence_required_flag in ["1", "TRUE", "True", "true", "YES", "Yes", "yes"]:
+            label_parts.append(f"証跡: {evidence_status or 'REQUIRED'}")
+
+        choices.append((task_id, " / ".join(label_parts)))
+
+    return choices
+
+
 def document_list(request):
     deal_choices = _build_deal_choices(include_empty=True)
     filter_form = DocumentFilterForm(request.GET or None, deal_choices=deal_choices)
@@ -77,13 +117,22 @@ def document_list(request):
 
 def document_upload(request):
     initial_deal_id = request.GET.get("deal_id") or ""
+    initial_task_id = request.GET.get("task_id") or ""
+
     deal_choices = _build_deal_choices(include_empty=False)
+
+    selected_deal_id = initial_deal_id
+    if request.method == "POST":
+        selected_deal_id = request.POST.get("deal_id") or initial_deal_id
+
+    task_choices = _build_task_choices(deal_id=selected_deal_id)
 
     if request.method == "POST":
         form = DocumentUploadForm(
             request.POST,
             request.FILES,
             deal_choices=deal_choices,
+            task_choices=task_choices,
         )
 
         if form.is_valid():
@@ -99,6 +148,24 @@ def document_upload(request):
             try:
                 document_id = document_service.upload_document(dto, uploaded_file)
 
+                if dto.linked_task_id and int(dto.is_evidence_flag or 0) == 1:
+                    task_service.mark_evidence_attached(
+                        task_id=dto.linked_task_id,
+                        document_id=document_id,
+                    )
+
+                    audit_service.log(
+                        deal_id=dto.deal_id,
+                        object_type="TASK",
+                        object_id=dto.linked_task_id,
+                        action_type="EVIDENCE_ATTACHED",
+                        before_value="REQUIRED",
+                        after_value=document_id,
+                        acted_by_user_id=dto.owner_user_id,
+                        ip_address=request.META.get("REMOTE_ADDR", ""),
+                        note="証跡文書のアップロードによりタスクの証跡状態を更新しました。",
+                    )
+
                 audit_service.log(
                     deal_id=dto.deal_id,
                     object_type="DOCUMENT",
@@ -113,6 +180,12 @@ def document_upload(request):
 
                 messages.success(request, f"資料を登録しました: {document_id}")
 
+                if dto.linked_task_id and int(dto.is_evidence_flag or 0) == 1:
+                    messages.success(
+                        request,
+                        f"関連タスク {dto.linked_task_id} の証跡状態を ATTACHED に更新しました。",
+                    )
+
                 if dto.deal_id:
                     return redirect("deals:detail", deal_id=dto.deal_id)
 
@@ -122,8 +195,14 @@ def document_upload(request):
                 messages.error(request, str(e))
     else:
         form = DocumentUploadForm(
-            initial={"deal_id": initial_deal_id},
+            initial={
+                "deal_id": initial_deal_id,
+                "linked_task_id": initial_task_id,
+                "document_type": "EVIDENCE",
+                "is_evidence_flag": True,
+            },
             deal_choices=deal_choices,
+            task_choices=task_choices,
         )
 
     return render(
@@ -131,7 +210,7 @@ def document_upload(request):
         "documents/document_upload.html",
         {
             "form": form,
-            "deal_id": initial_deal_id,
+            "deal_id": selected_deal_id,
         },
     )
 

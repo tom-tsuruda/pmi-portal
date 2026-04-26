@@ -1,6 +1,27 @@
 from django import forms
 
 
+PHASE_CHOICES = [
+    ("PRE_CLOSE", "PRE_CLOSE：クロージング前"),
+    ("DAY1", "DAY1：Day1対応"),
+    ("DAY30", "DAY30：30日以内"),
+    ("DAY100", "DAY100：100日計画"),
+    ("TSA", "TSA：TSA対応"),
+    ("POST100", "POST100：100日後"),
+]
+
+WORKSTREAM_CHOICES = [
+    ("PMO", "PMO：全体管理"),
+    ("HR", "HR：人事・労務"),
+    ("IT", "IT：IT・システム"),
+    ("FINANCE", "FINANCE：財務・会計"),
+    ("LEGAL", "LEGAL：法務・契約"),
+    ("SALES", "SALES：営業・顧客"),
+    ("OPS", "OPS：業務・オペレーション"),
+    ("COMMS", "COMMS：社内外コミュニケーション"),
+]
+
+
 class DocumentUploadForm(forms.Form):
     deal_id = forms.ChoiceField(
         label="案件",
@@ -11,29 +32,13 @@ class DocumentUploadForm(forms.Form):
     phase_id = forms.ChoiceField(
         label="フェーズ",
         required=True,
-        choices=[
-            ("PRE_CLOSE", "PRE_CLOSE：クロージング前"),
-            ("DAY1", "DAY1：Day1対応"),
-            ("DAY30", "DAY30：30日以内"),
-            ("DAY100", "DAY100：100日計画"),
-            ("TSA", "TSA：TSA対応"),
-            ("POST100", "POST100：100日後"),
-        ],
+        choices=PHASE_CHOICES,
     )
 
     workstream_id = forms.ChoiceField(
         label="ワークストリーム",
         required=True,
-        choices=[
-            ("PMO", "PMO：全体管理"),
-            ("HR", "HR：人事・労務"),
-            ("IT", "IT：IT・システム"),
-            ("FINANCE", "FINANCE：財務・会計"),
-            ("LEGAL", "LEGAL：法務・契約"),
-            ("SALES", "SALES：営業・顧客"),
-            ("OPS", "OPS：業務・オペレーション"),
-            ("COMMS", "COMMS：社内外コミュニケーション"),
-        ],
+        choices=WORKSTREAM_CHOICES,
     )
 
     document_title = forms.CharField(
@@ -56,6 +61,7 @@ class DocumentUploadForm(forms.Form):
             ("TEMPLATE", "TEMPLATE：テンプレート"),
             ("OTHER", "OTHER：その他"),
         ],
+        initial="EVIDENCE",
     )
 
     category = forms.CharField(
@@ -90,11 +96,10 @@ class DocumentUploadForm(forms.Form):
         initial="INTERNAL",
     )
 
-    linked_task_id = forms.CharField(
-        label="関連タスクID",
-        max_length=100,
+    linked_task_id = forms.ChoiceField(
+        label="関連タスク",
         required=False,
-        widget=forms.TextInput(attrs={"placeholder": "例：TASK-000001"}),
+        choices=[],
     )
 
     linked_raid_id = forms.CharField(
@@ -130,6 +135,7 @@ class DocumentUploadForm(forms.Form):
     is_evidence_flag = forms.BooleanField(
         label="証跡として扱う",
         required=False,
+        initial=True,
     )
 
     is_report_flag = forms.BooleanField(
@@ -142,11 +148,15 @@ class DocumentUploadForm(forms.Form):
         required=True,
     )
 
-    def __init__(self, *args, deal_choices=None, **kwargs):
+    def __init__(self, *args, deal_choices=None, task_choices=None, **kwargs):
         super().__init__(*args, **kwargs)
 
         self.fields["deal_id"].choices = deal_choices or [
             ("", "案件がありません。先に案件を登録してください。")
+        ]
+
+        self.fields["linked_task_id"].choices = task_choices or [
+            ("", "関連タスクなし")
         ]
 
 
@@ -170,31 +180,13 @@ class DocumentFilterForm(forms.Form):
     phase_id = forms.ChoiceField(
         label="フェーズ",
         required=False,
-        choices=[
-            ("", "すべて"),
-            ("PRE_CLOSE", "PRE_CLOSE"),
-            ("DAY1", "DAY1"),
-            ("DAY30", "DAY30"),
-            ("DAY100", "DAY100"),
-            ("TSA", "TSA"),
-            ("POST100", "POST100"),
-        ],
+        choices=[("", "すべて")] + PHASE_CHOICES,
     )
 
     workstream_id = forms.ChoiceField(
         label="ワークストリーム",
         required=False,
-        choices=[
-            ("", "すべて"),
-            ("PMO", "PMO"),
-            ("HR", "HR"),
-            ("IT", "IT"),
-            ("FINANCE", "FINANCE"),
-            ("LEGAL", "LEGAL"),
-            ("SALES", "SALES"),
-            ("OPS", "OPS"),
-            ("COMMS", "COMMS"),
-        ],
+        choices=[("", "すべて")] + WORKSTREAM_CHOICES,
     )
 
     document_type = forms.ChoiceField(

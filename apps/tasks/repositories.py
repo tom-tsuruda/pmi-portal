@@ -21,6 +21,15 @@ class ExcelTaskRepository(BaseExcelRepository):
     def find_by_deal(self, deal_id: str) -> list[dict]:
         return self.find_by("deal_id", deal_id)
 
+    def find_one_by_task_id(self, task_id: str) -> dict | None:
+        rows = self.find_all()
+
+        for row in rows:
+            if str(row.get("task_id") or "") == str(task_id):
+                return row
+
+        return None
+
     def exists_by_deal_and_template(self, deal_id: str, template_source_id: str) -> bool:
         if not deal_id or not template_source_id:
             return False
@@ -47,8 +56,6 @@ class ExcelTaskRepository(BaseExcelRepository):
         workstream_id = str(filters.get("workstream_id") or "").strip()
         owner_user_id = str(filters.get("owner_user_id") or "").strip()
 
-        # チェックなし=False → CANCELLEDは非表示
-        # チェックあり=True → CANCELLEDも表示
         show_cancelled = bool(filters.get("show_cancelled"))
 
         results = []

@@ -70,8 +70,10 @@
 
         <div class="summary-box">
             <div class="summary-label">証跡未添付</div>
-            <div class="summary-value">{{ missing_evidence_count }}</div>
-            <div class="summary-sub">Evidence Required</div>
+            <div class="summary-value">{{ evidence_summary.missing }}</div>
+            <div class="summary-sub">
+                添付済 {{ evidence_summary.attached }} / 対象 {{ evidence_summary.total }}
+            </div>
         </div>
 
         <div class="summary-box">
@@ -88,72 +90,6 @@
     </div>
 </div>
 
-<div class="detail-section card">
-    <div class="page-header">
-        <div>
-            <h2>Phase別タスク状況</h2>
-            <div style="color: #6b7280;">
-                Pre-Close、Day1、Day30、Day100などのフェーズ別に、進捗と未完了件数を確認します。
-            </div>
-        </div>
-
-        <a class="button-secondary no-print" href="{% url 'tasks:list' %}?deal_id={{ deal.deal_id }}">
-            タスク一覧へ
-        </a>
-    </div>
-
-    {% if phase_summary %}
-        <table>
-            <thead>
-                <tr>
-                    <th>Phase</th>
-                    <th>総数</th>
-                    <th>完了</th>
-                    <th>未完了</th>
-                    <th>進捗</th>
-                    <th>HIGH</th>
-                    <th>期限超過</th>
-                    <th class="no-print">表示</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for item in phase_summary %}
-                    <tr>
-                        <td><strong>{{ item.label }}</strong></td>
-                        <td>{{ item.total }}</td>
-                        <td>{{ item.done }}</td>
-                        <td>{{ item.open }}</td>
-                        <td>
-                            <div style="display: flex; align-items: center; gap: 8px;">
-                                <div style="width: 120px; height: 10px; background: #e5e7eb; border-radius: 999px; overflow: hidden;">
-                                    <div style="width: {{ item.progress }}%; height: 10px; background: #2563eb;"></div>
-                                </div>
-                                <span>{{ item.progress }}%</span>
-                            </div>
-                        </td>
-                        <td>{{ item.high }}</td>
-                        <td>
-                            {% if item.overdue %}
-                                <span style="color: #dc2626; font-weight: 700;">{{ item.overdue }}</span>
-                            {% else %}
-                                0
-                            {% endif %}
-                        </td>
-                        <td class="no-print">
-                            <a class="button-secondary" href="{% url 'tasks:list' %}?deal_id={{ deal.deal_id }}&phase_id={{ item.key }}">
-                                このPhaseを見る
-                            </a>
-                        </td>
-                    </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    {% else %}
-        <div class="empty">
-            Phase別に表示できるタスクがまだありません。
-        </div>
-    {% endif %}
-</div>
 
 <div class="detail-section card">
     <div class="page-header">
@@ -248,13 +184,14 @@
             <thead>
                 <tr>
                     <th>タスクID</th>
-                    <th>Phase</th>
-                    <th>Workstream</th>
-                    <th>タスク名</th>
+                    <th>フェーズ</th>
+                    <th>ワークストリーム</th>
+                    <th>タイトル</th>
                     <th>優先度</th>
                     <th>期限</th>
-                    <th>状態</th>
-                    <th>証跡状態</th>
+                    <th>担当</th>
+                    <th>ステータス</th>
+                    <th>証跡</th>
                     <th class="no-print">操作</th>
                 </tr>
             </thead>
@@ -286,6 +223,24 @@
                         </td>
                         <td>{{ task.status|default:"-" }}</td>
                         <td>
+                            {% if task.evidence_status == "ATTACHED" or task.evidence_status == "COMPLETED" or task.evidence_status == "DONE" %}
+                                <span style="color: #166534; font-weight: 700;">添付済</span>
+                            {% else %}
+                                <span style="color: #dc2626; font-weight: 700;">未添付</span>
+                                {% if task.evidence_status %}
+                                    <div style="color: #6b7280; font-size: 12px; margin-top: 4px;">
+                                        {{ task.evidence_status }}
+                                    </div>
+                                {% endif %}
+                            {% endif %}
+                        </td>
+                        
+                        <td class="no-print">
+                            <a class="button-secondary" href="{% url 'documents:upload' %}?deal_id={{ deal.deal_id }}&task_id={{ task.task_id }}">
+                                証跡追加
+                            </a>
+                        </td>
+                        <td>
                             {% if task.evidence_status %}
                                 {{ task.evidence_status }}
                             {% else %}
@@ -294,7 +249,7 @@
                         </td>
                         <td class="no-print">
                             <a class="button-secondary" href="{% url 'documents:upload' %}?deal_id={{ deal.deal_id }}">
-                                文書追加
+                                証跡追加
                             </a>
                         </td>
                     </tr>
@@ -459,7 +414,7 @@
                 </tr>
             {% empty %}
                 <tr>
-                    <td colspan="8" class="empty">この案件に紐づくタスクはまだありません。</td>
+                    <td colspan="10" class="empty">この案件に紐づくタスクはまだありません。</td>
                 </tr>
             {% endfor %}
         </tbody>

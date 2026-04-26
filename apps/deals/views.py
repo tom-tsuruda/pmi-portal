@@ -159,8 +159,7 @@ def deal_detail(request, deal_id: str):
         default_label="未設定",
     )
 
-    missing_evidence_tasks = _build_missing_evidence_tasks(tasks)
-    missing_evidence_count = len(missing_evidence_tasks)
+    evidence_summary = _build_evidence_summary(tasks)
 
     open_raid_count = len(
         [
@@ -200,8 +199,7 @@ def deal_detail(request, deal_id: str):
             "approvals": approvals,
             "phase_summary": phase_summary,
             "workstream_summary": workstream_summary,
-            "missing_evidence_tasks": missing_evidence_tasks,
-            "missing_evidence_count": missing_evidence_count,
+            "evidence_summary": evidence_summary,
         },
     )
 
@@ -427,18 +425,16 @@ def _build_task_group_summary(
     return sorted(results, key=sort_key)
 
 
-def _build_missing_evidence_tasks(tasks: list[dict]) -> list[dict]:
+def _build_evidence_summary(tasks: list[dict]) -> dict:
     """
-    証跡が必要だが、まだ証跡添付済みになっていないタスクを抽出する。
-
-    対象:
-    - evidence_required_flag が 1 / TRUE / YES / はい
-    - status が CANCELLED ではない
-    - evidence_status が ATTACHED / COMPLETED / DONE / NOT_REQUIRED ではない
+    全タスクを証跡対象として集計する。
+    CANCELLED は対象外。
     """
-    missing_tasks = []
+    total = 0
+    attached = 0
+    missing = 0
 
-    completed_evidence_statuses = {
+    attached_statuses = {
         "ATTACHED",
         "COMPLETED",
         "DONE",
@@ -447,30 +443,28 @@ def _build_missing_evidence_tasks(tasks: list[dict]) -> list[dict]:
         "完了",
     }
 
-    not_required_statuses = {
-        "NOT_REQUIRED",
-        "不要",
-        "対象外",
-    }
-
     for task in tasks:
         status = str(task.get("status") or "").strip()
-        evidence_required_flag = task.get("evidence_required_flag")
         evidence_status = str(task.get("evidence_status") or "").strip()
 
         if status == "CANCELLED":
             continue
 
-        if not _to_bool_flag(evidence_required_flag):
-            continue
+        total += 1
 
-        if evidence_status in completed_evidence_statuses:
-            continue
+        if evidence_status in attached_statuses:
+            attached += 1
+        else:
+            missing += 1
 
-        if evidence_status in not_required_statuses:
-            continue
+    progress = round((attached / total) * 100) if total else 0
 
-        missing_tasks.append(task)
+    return {
+        "total": total,
+        "attached": attached,
+        "missing": missing,
+        "progress": progress,
+    }
 
     def sort_key(task):
         priority_order = {

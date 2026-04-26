@@ -44,8 +44,10 @@ class TaskService:
             "completed_date": "",
 
             "approval_required_flag": 0,
-            "evidence_required_flag": dto.evidence_required_flag,
-            "evidence_status": "REQUIRED" if int(dto.evidence_required_flag or 0) == 1 else "NOT_REQUIRED",
+
+            # このアプリでは、すべてのタスクに証跡を求める前提にする。
+            "evidence_required_flag": 1,
+            "evidence_status": "REQUIRED",
 
             "template_source_id": dto.template_source_id,
             "related_decision_id": "",
@@ -83,11 +85,43 @@ class TaskService:
         return True, task_id
 
     def update_status(self, task_id: str, status: str) -> None:
+        updates = {
+            "status": status,
+            "updated_at": now_str(),
+        }
+
+        if status == "DONE":
+            updates["completed_date"] = now_str()
+
         self.task_repo.update_row(
             "task_id",
             task_id,
-            {
-                "status": status,
-                "updated_at": now_str(),
-            },
+            updates,
         )
+
+    def mark_evidence_attached(self, task_id: str, document_id: str = "") -> None:
+        """
+        証跡文書が紐づいたタスクを ATTACHED に更新する。
+        """
+        if not task_id:
+            return
+
+        updates = {
+            "evidence_status": "ATTACHED",
+            "updated_at": now_str(),
+        }
+
+        if document_id:
+            updates["related_document_id"] = document_id
+
+        self.task_repo.update_row(
+            "task_id",
+            task_id,
+            updates,
+        )
+
+    def get_task(self, task_id: str) -> dict | None:
+        if not task_id:
+            return None
+
+        return self.task_repo.find_one_by_task_id(task_id)
