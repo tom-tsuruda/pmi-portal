@@ -5,7 +5,13 @@
 {% block content %}
 <div class="card">
     <div class="page-header">
-        <h2>タスク一覧</h2>
+        <div>
+            <h2>タスク一覧</h2>
+            <p style="margin: 6px 0 0; color: #6b7280;">
+                タスクの進捗、期限、証跡添付状況を確認します。証跡追加はこの画面から行います。
+            </p>
+        </div>
+
         <a class="button" href="{% url 'tasks:create' %}">新規タスク登録</a>
     </div>
 
@@ -73,28 +79,73 @@
                     <th>タスク名</th>
                     <th>優先度</th>
                     <th>ステータス</th>
+                    <th>証跡</th>
                     <th>担当者</th>
                     <th>期限</th>
                     <th>テンプレート</th>
-                    <th>更新</th>
+                    <th>ステータス更新</th>
+                    <th>証跡追加</th>
                 </tr>
             </thead>
+
             <tbody>
                 {% for task in tasks %}
                     <tr>
                         <td>{{ task.task_id }}</td>
-                        <td>{{ task.deal_id }}</td>
-                        <td>{{ task.phase_id }}</td>
-                        <td>{{ task.workstream_id }}</td>
-                        <td>{{ task.title }}</td>
-                        <td>{{ task.priority }}</td>
-                        <td>{{ task.status }}</td>
-                        <td>{{ task.owner_user_id }}</td>
-                        <td>{{ task.due_date }}</td>
-                        <td>{{ task.template_source_id }}</td>
+
                         <td>
-                            <form method="post" action="{% url 'tasks:update_status' task.task_id %}" style="display: flex; gap: 6px;">
+                            {% if task.deal_id %}
+                                <a href="{% url 'deals:detail' task.deal_id %}">
+                                    {{ task.deal_id }}
+                                </a>
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+
+                        <td>{{ task.phase_id|default:"-" }}</td>
+                        <td>{{ task.workstream_id|default:"-" }}</td>
+
+                        <td>
+                            <strong>{{ task.title|default:"-" }}</strong>
+
+                            {% if task.description %}
+                                <div style="color: #6b7280; font-size: 12px; margin-top: 4px;">
+                                    {{ task.description }}
+                                </div>
+                            {% endif %}
+
+                            {% if task.beginner_guidance %}
+                                <div style="color: #2563eb; font-size: 12px; margin-top: 4px;">
+                                    {{ task.beginner_guidance }}
+                                </div>
+                            {% endif %}
+                        </td>
+
+                        <td>{{ task.priority|default:"-" }}</td>
+                        <td>{{ task.status|default:"-" }}</td>
+
+                        <td>
+                            {% if task.evidence_status == "ATTACHED" or task.evidence_status == "COMPLETED" or task.evidence_status == "DONE" or task.evidence_status == "OK" or task.evidence_status == "添付済" or task.evidence_status == "完了" %}
+                                <span style="color: #166534; font-weight: 700;">添付済</span>
+                            {% else %}
+                                <span style="color: #dc2626; font-weight: 700;">未添付</span>
+                                {% if task.evidence_status %}
+                                    <div style="color: #6b7280; font-size: 12px; margin-top: 4px;">
+                                        {{ task.evidence_status }}
+                                    </div>
+                                {% endif %}
+                            {% endif %}
+                        </td>
+
+                        <td>{{ task.owner_user_id|default:"-" }}</td>
+                        <td>{{ task.due_date|default:"-" }}</td>
+                        <td>{{ task.template_source_id|default:"-" }}</td>
+
+                        <td>
+                            <form method="post" action="{% url 'tasks:update_status' task.task_id %}" style="display: flex; gap: 6px; align-items: center;">
                                 {% csrf_token %}
+
                                 <select name="status">
                                     <option value="TODO" {% if task.status == "TODO" %}selected{% endif %}>TODO</option>
                                     <option value="IN_PROGRESS" {% if task.status == "IN_PROGRESS" %}selected{% endif %}>IN_PROGRESS</option>
@@ -102,8 +153,17 @@
                                     <option value="BLOCKED" {% if task.status == "BLOCKED" %}selected{% endif %}>BLOCKED</option>
                                     <option value="CANCELLED" {% if task.status == "CANCELLED" %}selected{% endif %}>CANCELLED</option>
                                 </select>
-                                <button class="button" type="submit">更新</button>
+
+                                <button class="button-secondary" type="submit">
+                                    更新
+                                </button>
                             </form>
+                        </td>
+
+                        <td>
+                            <a class="button-secondary" href="{% url 'documents:upload' %}?deal_id={{ task.deal_id }}&task_id={{ task.task_id }}">
+                                証跡追加
+                            </a>
                         </td>
                     </tr>
                 {% endfor %}

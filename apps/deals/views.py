@@ -27,7 +27,6 @@ questionnaire_service = QuestionnaireService()
 
 def deal_list(request):
     filter_form = DealFilterForm(request.GET or None)
-
     filters = {}
 
     if filter_form.is_valid():
@@ -434,25 +433,15 @@ def _build_evidence_summary(tasks: list[dict]) -> dict:
     attached = 0
     missing = 0
 
-    attached_statuses = {
-        "ATTACHED",
-        "COMPLETED",
-        "DONE",
-        "OK",
-        "添付済",
-        "完了",
-    }
-
     for task in tasks:
         status = str(task.get("status") or "").strip()
-        evidence_status = str(task.get("evidence_status") or "").strip()
 
         if status == "CANCELLED":
             continue
 
         total += 1
 
-        if evidence_status in attached_statuses:
+        if _is_evidence_attached(task.get("evidence_status")):
             attached += 1
         else:
             missing += 1
@@ -465,6 +454,26 @@ def _build_evidence_summary(tasks: list[dict]) -> dict:
         "missing": missing,
         "progress": progress,
     }
+
+
+def _build_missing_evidence_tasks(tasks: list[dict]) -> list[dict]:
+    """
+    レポート用。
+    全タスクを証跡対象として、証跡未添付タスクを抽出する。
+    CANCELLED は対象外。
+    """
+    missing_tasks = []
+
+    for task in tasks:
+        status = str(task.get("status") or "").strip()
+
+        if status == "CANCELLED":
+            continue
+
+        if _is_evidence_attached(task.get("evidence_status")):
+            continue
+
+        missing_tasks.append(task)
 
     def sort_key(task):
         priority_order = {
@@ -496,21 +505,17 @@ def _build_evidence_summary(tasks: list[dict]) -> dict:
     return sorted(missing_tasks, key=sort_key)
 
 
-def _to_bool_flag(value) -> bool:
+def _is_evidence_attached(value) -> bool:
     text = str(value or "").strip()
 
-    return text in [
-        "1",
-        "TRUE",
-        "True",
-        "true",
-        "YES",
-        "Yes",
-        "yes",
-        "はい",
-        "有",
-        "あり",
-    ]
+    return text in {
+        "ATTACHED",
+        "COMPLETED",
+        "DONE",
+        "OK",
+        "添付済",
+        "完了",
+    }
 
 
 def _is_overdue(due_date_value) -> bool:

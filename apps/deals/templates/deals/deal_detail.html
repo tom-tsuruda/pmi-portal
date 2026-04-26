@@ -90,6 +90,72 @@
     </div>
 </div>
 
+<div class="detail-section card">
+    <div class="page-header">
+        <div>
+            <h2>Phase別タスク状況</h2>
+            <div style="color: #6b7280;">
+                Pre-Close、Day1、Day30、Day100などのフェーズ別に、進捗と未完了件数を確認します。
+            </div>
+        </div>
+
+        <a class="button-secondary no-print" href="{% url 'tasks:list' %}?deal_id={{ deal.deal_id }}">
+            タスク一覧へ
+        </a>
+    </div>
+
+    {% if phase_summary %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Phase</th>
+                    <th>総数</th>
+                    <th>完了</th>
+                    <th>未完了</th>
+                    <th>進捗</th>
+                    <th>HIGH</th>
+                    <th>期限超過</th>
+                    <th class="no-print">表示</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in phase_summary %}
+                    <tr>
+                        <td><strong>{{ item.label }}</strong></td>
+                        <td>{{ item.total }}</td>
+                        <td>{{ item.done }}</td>
+                        <td>{{ item.open }}</td>
+                        <td>
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <div style="width: 120px; height: 10px; background: #e5e7eb; border-radius: 999px; overflow: hidden;">
+                                    <div style="width: {{ item.progress }}%; height: 10px; background: #2563eb;"></div>
+                                </div>
+                                <span>{{ item.progress }}%</span>
+                            </div>
+                        </td>
+                        <td>{{ item.high }}</td>
+                        <td>
+                            {% if item.overdue %}
+                                <span style="color: #dc2626; font-weight: 700;">{{ item.overdue }}</span>
+                            {% else %}
+                                0
+                            {% endif %}
+                        </td>
+                        <td class="no-print">
+                            <a class="button-secondary" href="{% url 'tasks:list' %}?deal_id={{ deal.deal_id }}&phase_id={{ item.key }}">
+                                このPhaseを見る
+                            </a>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <div class="empty">
+            Phase別に表示できるタスクがまだありません。
+        </div>
+    {% endif %}
+</div>
 
 <div class="detail-section card">
     <div class="page-header">
@@ -154,114 +220,6 @@
     {% else %}
         <div class="empty">
             Workstream別に表示できるタスクがまだありません。
-        </div>
-    {% endif %}
-</div>
-
-<div class="detail-section card">
-    <div class="page-header">
-        <div>
-            <h2>証跡未添付タスク</h2>
-            <div style="color: #6b7280;">
-                証跡が必要なタスクのうち、まだ証跡が添付済みになっていないものを表示します。
-            </div>
-        </div>
-
-        <a class="button-secondary no-print" href="{% url 'documents:upload' %}?deal_id={{ deal.deal_id }}">
-            証跡をアップロード
-        </a>
-    </div>
-
-    {% if missing_evidence_tasks %}
-        <div style="background: #fff7ed; border: 1px solid #fed7aa; border-radius: 12px; padding: 14px; margin-bottom: 16px;">
-            <strong style="color: #9a3412;">注意：</strong>
-            <span style="color: #9a3412;">
-                DONEにする前、またはDONE後すぐに、証跡となる資料・スクリーンショット・承認記録などを添付してください。
-            </span>
-        </div>
-
-        <table>
-            <thead>
-                <tr>
-                    <th>タスクID</th>
-                    <th>フェーズ</th>
-                    <th>ワークストリーム</th>
-                    <th>タイトル</th>
-                    <th>優先度</th>
-                    <th>期限</th>
-                    <th>担当</th>
-                    <th>ステータス</th>
-                    <th>証跡</th>
-                    <th class="no-print">操作</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for task in missing_evidence_tasks %}
-                    <tr>
-                        <td>{{ task.task_id|default:"-" }}</td>
-                        <td>{{ task.phase_id|default:"-" }}</td>
-                        <td>{{ task.workstream_id|default:"-" }}</td>
-                        <td>
-                            <strong>{{ task.title|default:"-" }}</strong>
-                            {% if task.why_this_task %}
-                                <div style="color: #6b7280; font-size: 12px; margin-top: 4px;">
-                                    {{ task.why_this_task }}
-                                </div>
-                            {% endif %}
-                        </td>
-                        <td>{{ task.priority|default:"-" }}</td>
-                        <td>
-                            {% if task.due_date %}
-                                {% if task.overdue_flag %}
-                                    <span style="color: #dc2626; font-weight: 700;">{{ task.due_date }}</span>
-                                {% else %}
-                                    {{ task.due_date }}
-                                {% endif %}
-                            {% else %}
-                                -
-                            {% endif %}
-                        </td>
-                        <td>{{ task.status|default:"-" }}</td>
-                        <td>
-                            {% if task.evidence_status == "ATTACHED" or task.evidence_status == "COMPLETED" or task.evidence_status == "DONE" %}
-                                <span style="color: #166534; font-weight: 700;">添付済</span>
-                            {% else %}
-                                <span style="color: #dc2626; font-weight: 700;">未添付</span>
-                                {% if task.evidence_status %}
-                                    <div style="color: #6b7280; font-size: 12px; margin-top: 4px;">
-                                        {{ task.evidence_status }}
-                                    </div>
-                                {% endif %}
-                            {% endif %}
-                        </td>
-                        
-                        <td class="no-print">
-                            <a class="button-secondary" href="{% url 'documents:upload' %}?deal_id={{ deal.deal_id }}&task_id={{ task.task_id }}">
-                                証跡追加
-                            </a>
-                        </td>
-                        <td>
-                            {% if task.evidence_status %}
-                                {{ task.evidence_status }}
-                            {% else %}
-                                <span style="color: #dc2626; font-weight: 700;">未設定</span>
-                            {% endif %}
-                        </td>
-                        <td class="no-print">
-                            <a class="button-secondary" href="{% url 'documents:upload' %}?deal_id={{ deal.deal_id }}">
-                                証跡追加
-                            </a>
-                        </td>
-                    </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    {% else %}
-        <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 12px; padding: 14px;">
-            <strong style="color: #166534;">OK：</strong>
-            <span style="color: #166534;">
-                証跡未添付のタスクはありません。
-            </span>
         </div>
     {% endif %}
 </div>
@@ -371,7 +329,9 @@
     <div class="page-header">
         <div>
             <h2>タスク一覧</h2>
-            <div style="color: #6b7280;">PMIで実行すべき具体的な作業です。期限、担当、ステータスを中心に確認します。</div>
+            <div style="color: #6b7280;">
+                PMIで実行すべき具体的な作業です。すべてのタスクについて、証跡の添付状況も確認します。
+            </div>
         </div>
 
         <a class="button-secondary no-print" href="{% url 'tasks:create' %}?deal_id={{ deal.deal_id }}">
@@ -390,6 +350,7 @@
                 <th>期限</th>
                 <th>担当</th>
                 <th>ステータス</th>
+                <th>証跡</th>
             </tr>
         </thead>
         <tbody>
@@ -411,10 +372,24 @@
                     <td>{{ task.due_date|default:"-" }}</td>
                     <td>{{ task.owner_user_id|default:"-" }}</td>
                     <td>{{ task.status|default:"-" }}</td>
+
+                    <td>
+                        {% if task.evidence_status == "ATTACHED" or task.evidence_status == "COMPLETED" or task.evidence_status == "DONE" or task.evidence_status == "OK" or task.evidence_status == "添付済" or task.evidence_status == "完了" %}
+                            <span style="color: #166534; font-weight: 700;">添付済</span>
+                        {% else %}
+                            <span style="color: #dc2626; font-weight: 700;">未添付</span>
+                            {% if task.evidence_status %}
+                                <div style="color: #6b7280; font-size: 12px; margin-top: 4px;">
+                                    {{ task.evidence_status }}
+                                </div>
+                            {% endif %}
+                        {% endif %}
+                    </td>
+
                 </tr>
             {% empty %}
                 <tr>
-                    <td colspan="10" class="empty">この案件に紐づくタスクはまだありません。</td>
+                    <td colspan="9" class="empty">この案件に紐づくタスクはまだありません。</td>
                 </tr>
             {% endfor %}
         </tbody>
