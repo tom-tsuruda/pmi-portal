@@ -1,25 +1,85 @@
 {% extends "base.html" %}
 
-{% block title %}資料アップロード | PMI Portal{% endblock %}
+{% block title %}
+    {% if template_mode %}テンプレート登録{% else %}資料アップロード{% endif %} | PMI Portal
+{% endblock %}
 
 {% block content %}
 <div class="card">
     <div class="page-header">
-        <h2>資料アップロード</h2>
-        {% if deal_id %}
-            <a class="button-secondary" href="{% url 'deals:detail' deal_id %}">案件詳細へ戻る</a>
+        <div>
+            <h2>
+                {% if template_mode %}
+                    テンプレート登録
+                {% else %}
+                    資料アップロード
+                {% endif %}
+            </h2>
+
+            <p style="margin: 6px 0 0; color: #6b7280;">
+                {% if template_mode %}
+                    全案件で再利用する雛形を登録します。案件・担当者・関連タスクへの紐付けは不要です。
+                {% else %}
+                    案件に関連する証跡、資料、報告書を登録します。
+                {% endif %}
+            </p>
+        </div>
+
+        {% if template_mode %}
+            <a class="button-secondary" href="{% url 'documents:templates' %}">
+                テンプレート一覧へ戻る
+            </a>
+        {% elif deal_id %}
+            <a class="button-secondary" href="{% url 'deals:detail' deal_id %}">
+                案件詳細へ戻る
+            </a>
         {% else %}
-            <a class="button-secondary" href="{% url 'documents:list' %}">一覧へ戻る</a>
+            <a class="button-secondary" href="{% url 'documents:list' %}">
+                一覧へ戻る
+            </a>
         {% endif %}
     </div>
+
+    {% if template_mode %}
+        <div style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 10px; padding: 14px; margin-bottom: 18px;">
+            <strong style="color: #1d4ed8;">テンプレート登録の考え方：</strong>
+            <span style="color: #1e40af;">
+                ここに登録するものは、特定案件の資料ではなく、PMIで繰り返し使う公式雛形です。
+                そのため、案件名・担当者・関連タスクは入力しません。
+                Phase、Workstream、カテゴリ、タグを付けて、後から探しやすくします。
+            </span>
+        </div>
+    {% endif %}
 
     <form method="post" enctype="multipart/form-data">
         {% csrf_token %}
 
-        {{ form.as_p }}
+        <div class="detail-section">
+            {{ form.as_p }}
+        </div>
 
         <div class="form-actions">
-            <button class="button" type="submit">アップロードする</button>
+            <button class="button" type="submit">
+                {% if template_mode %}
+                    テンプレートを登録する
+                {% else %}
+                    アップロードする
+                {% endif %}
+            </button>
+
+            {% if template_mode %}
+                <a class="button-secondary" href="{% url 'documents:templates' %}">
+                    キャンセル
+                </a>
+            {% elif deal_id %}
+                <a class="button-secondary" href="{% url 'deals:detail' deal_id %}">
+                    キャンセル
+                </a>
+            {% else %}
+                <a class="button-secondary" href="{% url 'documents:list' %}">
+                    キャンセル
+                </a>
+            {% endif %}
         </div>
     </form>
 </div>

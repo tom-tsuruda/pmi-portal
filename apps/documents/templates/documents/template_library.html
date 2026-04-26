@@ -1,0 +1,153 @@
+{% extends "base.html" %}
+
+{% block title %}テンプレートライブラリ | PMI Portal{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="page-header">
+        <div>
+            <h2>テンプレートライブラリ</h2>
+            <p style="margin: 6px 0 0; color: #6b7280;">
+                PMIで再利用する公式テンプレートを管理します。Day1通知、FAQ、COC抽出表、DPIA雛形、アクセス移行計画などをここに集約します。
+            </p>
+        </div>
+
+        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+            <a class="button" href="{% url 'documents:upload' %}?template=1">
+                テンプレート登録
+            </a>
+            <a class="button-secondary" href="{% url 'documents:list' %}">
+                資料一覧へ
+            </a>
+        </div>
+    </div>
+
+    <div style="background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 10px; padding: 14px; margin-bottom: 18px;">
+        <strong>この画面の位置づけ：</strong>
+        <span style="color: #4b5563;">
+            テンプレートは単なる添付ファイルではなく、PMI作業を標準化するための公式資産です。
+            案件・Phase・Workstream・タグを付けておくことで、後から案件に適用しやすくなります。
+        </span>
+    </div>
+
+    <form method="get" class="filter-box">
+        <div class="filter-grid">
+            <div>
+                {{ filter_form.keyword.label_tag }}
+                {{ filter_form.keyword }}
+            </div>
+
+            <div>
+                {{ filter_form.deal_id.label_tag }}
+                {{ filter_form.deal_id }}
+            </div>
+
+            <div>
+                {{ filter_form.phase_id.label_tag }}
+                {{ filter_form.phase_id }}
+            </div>
+
+            <div>
+                {{ filter_form.workstream_id.label_tag }}
+                {{ filter_form.workstream_id }}
+            </div>
+
+            <div>
+                {{ filter_form.document_type.label_tag }}
+                {{ filter_form.document_type }}
+            </div>
+
+            <div>
+                {{ filter_form.access_level.label_tag }}
+                {{ filter_form.access_level }}
+            </div>
+
+            <div>
+                {{ filter_form.owner_user_id.label_tag }}
+                {{ filter_form.owner_user_id }}
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <button class="button" type="submit">絞り込み</button>
+            <a class="button-secondary" href="{% url 'documents:templates' %}">解除</a>
+        </div>
+    </form>
+
+    <div style="margin: 16px 0; color: #6b7280;">
+        表示件数：{{ templates|length }} 件
+    </div>
+
+    {% if templates %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Template ID</th>
+                    <th>Phase</th>
+                    <th>WS</th>
+                    <th>タイトル</th>
+                    <th>種別</th>
+                    <th>カテゴリ</th>
+                    <th>タグ</th>
+                    <th>版</th>
+                    <th>ファイル名</th>
+                    <th>保存先</th>
+                    <th>削除</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for template in templates %}
+                    <tr>
+                        <td>{{ template.document_id|default:"-" }}</td>
+                        <td>{{ template.phase_id|default:"-" }}</td>
+                        <td>{{ template.workstream_id|default:"-" }}</td>
+                        <td>
+                            <strong>{{ template.document_title|default:"-" }}</strong>
+                            {% if template.document_purpose %}
+                                <div style="color: #6b7280; font-size: 11.5px; margin-top: 4px;">
+                                    {{ template.document_purpose }}
+                                </div>
+                            {% endif %}
+                        </td>
+                        <td>{{ template.document_type|default:"-" }}</td>
+                        <td>
+                            {{ template.category|default:"-" }}
+                            {% if template.subcategory %}
+                                <div style="color: #6b7280; font-size: 11.5px; margin-top: 4px;">
+                                    {{ template.subcategory }}
+                                </div>
+                            {% endif %}
+                        </td>
+                        <td>{{ template.tags|default:"-" }}</td>
+                        <td>{{ template.version_current|default:"1.0" }}</td>
+                        <td>{{ template.file_name|default:"-" }}</td>
+                        <td>{{ template.storage_path|default:"-" }}</td>
+                        <td>
+                            {% if template.deleted_flag != 1 and template.deleted_flag != "1" %}
+                                <form method="post" action="{% url 'documents:delete' template.document_id %}">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="deal_id" value="{{ template.deal_id }}">
+                                    <input type="hidden" name="return_to" value="templates">
+                                    <button
+                                        class="button-danger"
+                                        type="submit"
+                                        onclick="return confirm('このテンプレートを削除済みにします。よろしいですか？');"
+                                    >
+                                        削除
+                                    </button>
+                                </form>
+                            {% else %}
+                                削除済み
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <div class="empty">
+            登録済みテンプレートはまだありません。
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

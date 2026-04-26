@@ -5,7 +5,11 @@ from apps.audit.services import AuditLogService
 from apps.core.exceptions import RepositoryError
 from apps.deals.services import DealService
 from apps.documents.dtos import DocumentUploadDTO
-from apps.documents.forms import DocumentFilterForm, DocumentUploadForm
+from apps.documents.forms import (
+    DocumentFilterForm,
+    DocumentUploadForm,
+    TemplateUploadForm,
+)
 from apps.documents.services import DocumentService
 from apps.tasks.services import TaskService
 
@@ -67,7 +71,6 @@ def _build_task_choices(deal_id: str | None = None) -> list[tuple[str, str]]:
         title = task.get("title") or ""
         phase_id = task.get("phase_id") or ""
         workstream_id = task.get("workstream_id") or ""
-        evidence_required_flag = str(task.get("evidence_required_flag") or "")
         evidence_status = task.get("evidence_status") or ""
 
         if not task_id:
@@ -81,8 +84,7 @@ def _build_task_choices(deal_id: str | None = None) -> list[tuple[str, str]]:
         if phase_id or workstream_id:
             label_parts.append(f"{phase_id}/{workstream_id}")
 
-        if evidence_required_flag in ["1", "TRUE", "True", "true", "YES", "Yes", "yes"]:
-            label_parts.append(f"証跡: {evidence_status or 'REQUIRED'}")
+        label_parts.append(f"証跡: {evidence_status or '未添付'}")
 
         choices.append((task_id, " / ".join(label_parts)))
 
@@ -115,10 +117,131 @@ def document_list(request):
     )
 
 
+def template_library(request):
+    """
+    Template Library。
+    documentsシートのうち is_template_flag=1 のものだけを表示する。
+    """
+    deal_choices = _build_deal_choices(include_empty=True)
+    filter_form = DocumentFilterForm(request.GET or None, deal_choices=deal_choices)
+
+    filters = {
+        "template_only": True,
+        "show_deleted": False,
+    }
+
+    if filter_form.is_valid():
+        cleaned = filter_form.cleaned_data.copy()
+        filters.update(cleaned)
+
+    filters["template_only"] = True
+
+    try:
+        templates = document_service.filter_documents(filters)
+    except RepositoryError as e:
+        templates = []
+        messages.error(request, str(e))
+
+    return render(
+        request,
+        "documents/template_library.html",
+        {
+            "templates": templates,
+            "filter_form": filter_form,
+            "filters": filters,
+        },
+    )
+
+
 def document_upload(request):
     initial_deal_id = request.GET.get("deal_id") or ""
     initial_task_id = request.GET.get("task_id") or ""
+    template_mode = request.GET.get("template") in ["1", "true", "True", "yes", "YES"]
 
+    if template_mode:
+        return _template_upload(request)
+
+    return _normal_document_upload(
+        request=request,
+        initial_deal_id=initial_deal_id,
+        initial_task_id=initial_task_id,
+    )
+
+
+def _template_upload(request):
+    """
+    テンプレート登録専用処理。
+    画面には案件・担当・関連タスクを出さず、保存時に共通値を自動セットする。
+    """
+    if request.method == "POST":
+        form = TemplateUploadForm(request.POST, request.FILES)
+
+        if form.is_valid():
+            cleaned = form.cleaned_data.copy()
+            uploaded_file = cleaned.pop("file")
+
+            dto = DocumentUploadDTO(
+                deal_id="TEMPLATE_LIBRARY",
+                phase_id=cleaned.get("phase_id") or "DAY1",
+                workstream_id=cleaned.get("workstream_id") or "PMO",
+                document_title=cleaned.get("document_title") or "",
+                document_type="TEMPLATE",
+                category=cleaned.get("category") or "Template Library",
+                subcategory=cleaned.get("subcategory") or "",
+                owner_user_id="",
+                access_level=cleaned.get("access_level") or "INTERNAL",
+                linked_task_id="",
+                linked_raid_id="",
+                tags=cleaned.get("tags") or "",
+                document_purpose=cleaned.get("document_purpose") or "",
+                is_template_flag=1,
+                is_evidence_flag=0,
+                is_report_flag=0,
+            )
+
+            try:
+                document_id = document_service.upload_document(dto, uploaded_file)
+
+                audit_service.log(
+                    deal_id=dto.deal_id,
+                    object_type="TEMPLATE",
+                    object_id=document_id,
+                    action_type="CREATE",
+                    before_value="",
+                    after_value=dto.document_title,
+                    acted_by_user_id="",
+                    ip_address=request.META.get("REMOTE_ADDR", ""),
+                    note="テンプレートを登録しました。",
+                )
+
+                messages.success(request, f"テンプレートを登録しました: {document_id}")
+                return redirect("documents:templates")
+
+            except RepositoryError as e:
+                messages.error(request, str(e))
+    else:
+        form = TemplateUploadForm(
+            initial={
+                "access_level": "INTERNAL",
+                "category": "Template Library",
+            }
+        )
+
+    return render(
+        request,
+        "documents/document_upload.html",
+        {
+            "form": form,
+            "deal_id": "",
+            "template_mode": True,
+        },
+    )
+
+
+def _normal_document_upload(request, initial_deal_id: str = "", initial_task_id: str = ""):
+    """
+    案件に紐づく通常資料・証跡アップロード処理。
+    """
     deal_choices = _build_deal_choices(include_empty=False)
 
     selected_deal_id = initial_deal_id
@@ -211,6 +334,7 @@ def document_upload(request):
         {
             "form": form,
             "deal_id": selected_deal_id,
+            "template_mode": False,
         },
     )
 
@@ -220,6 +344,7 @@ def document_delete(request, document_id: str):
         return redirect("documents:list")
 
     deal_id = request.POST.get("deal_id") or ""
+    return_to = request.POST.get("return_to") or ""
 
     try:
         document_service.soft_delete_document(document_id)
@@ -241,7 +366,10 @@ def document_delete(request, document_id: str):
     except RepositoryError as e:
         messages.error(request, str(e))
 
-    if deal_id:
+    if return_to == "templates":
+        return redirect("documents:templates")
+
+    if deal_id and deal_id != "TEMPLATE_LIBRARY":
         return redirect("deals:detail", deal_id=deal_id)
 
     return redirect("documents:list")

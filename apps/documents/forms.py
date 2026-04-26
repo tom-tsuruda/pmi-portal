@@ -21,8 +21,29 @@ WORKSTREAM_CHOICES = [
     ("COMMS", "COMMS：社内外コミュニケーション"),
 ]
 
+DOCUMENT_TYPE_CHOICES = [
+    ("CHECKLIST", "CHECKLIST：チェックリスト"),
+    ("NOTICE", "NOTICE：通知文"),
+    ("CONTRACT", "CONTRACT：契約書"),
+    ("MINUTES", "MINUTES：議事録"),
+    ("EVIDENCE", "EVIDENCE：証跡"),
+    ("REPORT", "REPORT：レポート"),
+    ("TEMPLATE", "TEMPLATE：テンプレート"),
+    ("OTHER", "OTHER：その他"),
+]
+
+ACCESS_LEVEL_CHOICES = [
+    ("INTERNAL", "INTERNAL：社内"),
+    ("CONFIDENTIAL", "CONFIDENTIAL：機密"),
+    ("PUBLIC", "PUBLIC：公開可"),
+]
+
 
 class DocumentUploadForm(forms.Form):
+    """
+    案件に紐づく資料・証跡アップロード用フォーム。
+    """
+
     deal_id = forms.ChoiceField(
         label="案件",
         required=True,
@@ -51,16 +72,7 @@ class DocumentUploadForm(forms.Form):
     document_type = forms.ChoiceField(
         label="資料種別",
         required=True,
-        choices=[
-            ("CHECKLIST", "CHECKLIST：チェックリスト"),
-            ("NOTICE", "NOTICE：通知文"),
-            ("CONTRACT", "CONTRACT：契約書"),
-            ("MINUTES", "MINUTES：議事録"),
-            ("EVIDENCE", "EVIDENCE：証跡"),
-            ("REPORT", "REPORT：レポート"),
-            ("TEMPLATE", "TEMPLATE：テンプレート"),
-            ("OTHER", "OTHER：その他"),
-        ],
+        choices=DOCUMENT_TYPE_CHOICES,
         initial="EVIDENCE",
     )
 
@@ -88,11 +100,7 @@ class DocumentUploadForm(forms.Form):
     access_level = forms.ChoiceField(
         label="アクセスレベル",
         required=True,
-        choices=[
-            ("INTERNAL", "INTERNAL：社内"),
-            ("CONFIDENTIAL", "CONFIDENTIAL：機密"),
-            ("PUBLIC", "PUBLIC：公開可"),
-        ],
+        choices=ACCESS_LEVEL_CHOICES,
         initial="INTERNAL",
     )
 
@@ -160,6 +168,92 @@ class DocumentUploadForm(forms.Form):
         ]
 
 
+class TemplateUploadForm(forms.Form):
+    """
+    テンプレートライブラリ登録専用フォーム。
+    案件・担当者・関連タスク・証跡項目は表示しない。
+    """
+
+    document_title = forms.CharField(
+        label="テンプレート名",
+        max_length=200,
+        required=True,
+        widget=forms.TextInput(
+            attrs={
+                "placeholder": "例：Day1全社アナウンス / 支配権変更条項（COC）・重要契約確認表"
+            }
+        ),
+    )
+
+    phase_id = forms.ChoiceField(
+        label="主に使うフェーズ",
+        required=True,
+        choices=PHASE_CHOICES,
+    )
+
+    workstream_id = forms.ChoiceField(
+        label="主に使うワークストリーム",
+        required=True,
+        choices=WORKSTREAM_CHOICES,
+    )
+
+    category = forms.CharField(
+        label="カテゴリ",
+        max_length=100,
+        required=False,
+        widget=forms.TextInput(
+            attrs={
+                "placeholder": "例：Communication / HR / IT / Finance / Legal / PMO"
+            }
+        ),
+    )
+
+    subcategory = forms.CharField(
+        label="サブカテゴリ",
+        max_length=100,
+        required=False,
+        widget=forms.TextInput(
+            attrs={
+                "placeholder": "例：FAQ / 通知文 / 契約確認 / 議事録 / 報告"
+            }
+        ),
+    )
+
+    tags = forms.CharField(
+        label="タグ",
+        max_length=200,
+        required=False,
+        widget=forms.TextInput(
+            attrs={
+                "placeholder": "例：Day1,FAQ,COC,支配権変更,RACI,SteerCo"
+            }
+        ),
+    )
+
+    document_purpose = forms.CharField(
+        label="目的・使い方",
+        required=False,
+        widget=forms.Textarea(
+            attrs={
+                "rows": 4,
+                "placeholder": "このテンプレートをどの場面で使うか、使い方や注意点を入力してください。",
+            }
+        ),
+    )
+
+    access_level = forms.ChoiceField(
+        label="アクセスレベル",
+        required=True,
+        choices=ACCESS_LEVEL_CHOICES,
+        initial="INTERNAL",
+    )
+
+    file = forms.FileField(
+        label="テンプレートファイル",
+        required=True,
+    )
+
+
 class DocumentFilterForm(forms.Form):
     keyword = forms.CharField(
         label="キーワード",
@@ -192,17 +286,7 @@ class DocumentFilterForm(forms.Form):
     document_type = forms.ChoiceField(
         label="資料種別",
         required=False,
-        choices=[
-            ("", "すべて"),
-            ("CHECKLIST", "CHECKLIST"),
-            ("NOTICE", "NOTICE"),
-            ("CONTRACT", "CONTRACT"),
-            ("MINUTES", "MINUTES"),
-            ("EVIDENCE", "EVIDENCE"),
-            ("REPORT", "REPORT"),
-            ("TEMPLATE", "TEMPLATE"),
-            ("OTHER", "OTHER"),
-        ],
+        choices=[("", "すべて")] + DOCUMENT_TYPE_CHOICES,
     )
 
     status = forms.ChoiceField(
